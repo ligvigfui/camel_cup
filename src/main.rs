@@ -690,7 +690,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     //ask the user how many players are playing?
     let mut player_number = String::new();
     loop {
-        print!("\x1b[2J");
         println!("How many players are playing? (2-8)");
         player_number.clear();
         io::stdin().read_line(&mut player_number).expect("Failed to read line");
