@@ -1,0 +1,33 @@
+#![allow(dead_code, unused_variables, unused_imports)]
+#[allow(unused)]
+
+fn main() {
+    let mut strin = String::new();
+    strin.push_str("TODO: \r
+    refactor the code so that it genereates the game from a vec[colors],
+    check each call if vec contains the called color
+    
+    setup board DONE
+    move camel custom DONE
+    move camel random 
+    move player card DONE
+    get tip card DONE (move_tip_card)
+    evaluate tip card DONE
+    put endgame TipCard DONE
+    evaluate endgame TipCard DONE
+    reset turn  DONE
+    evaluate endgame everything - declare winer, sequance
+
+    create a readable display
+    create main loop
+    create controlls
+
+    create option0 to reverse
+
+
+
+    "
+    );
+    
+}
+
