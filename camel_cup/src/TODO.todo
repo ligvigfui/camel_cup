@@ -9,18 +9,18 @@ fn main() {
     
     setup board DONE
     move camel custom DONE
-    move camel random 
+    move camel random DONE
     move player card DONE
     get tip card DONE (move_tip_card)
     evaluate tip card DONE
     put endgame TipCard DONE
     evaluate endgame TipCard DONE
     reset turn  DONE
-    evaluate endgame everything - declare winer, sequance
+    evaluate endgame everything - declare winer, sequance DONE
 
-    create a readable display
-    create main loop
-    create controlls
+    create a readable display   DONE
+    create main loop    DONE
+    create controlls    DONE
 
     create option0 to reverse
 

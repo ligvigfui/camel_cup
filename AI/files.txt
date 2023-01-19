@@ -1,0 +1,5 @@
+genereations/numbers.json => entire neuralnetwork is saved in a json file
+
+1 -> +5
+2 -> 0
+3 -> -5
