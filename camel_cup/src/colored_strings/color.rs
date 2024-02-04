@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Color {
     Black,
     Red,
@@ -8,8 +8,8 @@ pub enum Color {
     Magenta,
     Cyan,
     White,
-    RGB(u8, u8, u8),
-    U8(u8),
+    RGB(Option<String>, u8, u8, u8),
+    U8(Option<String>, u8),
     Default,
     BrightBlack,
     BrightRed,
@@ -20,6 +20,7 @@ pub enum Color {
     BrightCyan,
     BrightWhite,
 }
+
 impl Color {
     pub(crate) fn to_foreground(&self) -> String {
         match self {
@@ -31,8 +32,8 @@ impl Color {
             Color::Magenta => "\x1B[35m".to_string(),
             Color::Cyan => "\x1B[36m".to_string(),
             Color::White => "\x1B[37m".to_string(),
-            Color::RGB(r, g, b) => format!("\x1B[38;2;{};{};{}m", r, g, b),
-            Color::U8(n) => format!("\x1B[38;5;{}m", n),
+            Color::RGB(_, r, g, b) => format!("\x1B[38;2;{};{};{}m", r, g, b),
+            Color::U8(_, n) => format!("\x1B[38;5;{}m", n),
             Color::Default => "\x1B[39m".to_string(),
             Color::BrightBlack => "\x1B[90m".to_string(),
             Color::BrightRed => "\x1B[91m".to_string(),
@@ -55,8 +56,8 @@ impl Color {
             Color::Magenta => "\x1B[45m".to_string(),
             Color::Cyan => "\x1B[46m".to_string(),
             Color::White => "\x1B[47m".to_string(),
-            Color::RGB(r, g, b) => format!("\x1B[48;2;{};{};{}m", r, g, b),
-            Color::U8(n) => format!("\x1B[48;5;{}m", n),
+            Color::RGB(_, r, g, b) => format!("\x1B[48;2;{};{};{}m", r, g, b),
+            Color::U8(_, n) => format!("\x1B[48;5;{}m", n),
             Color::Default => "\x1B[49m".to_string(),
             Color::BrightBlack => "\x1B[100m".to_string(),
             Color::BrightRed => "\x1B[101m".to_string(),
@@ -66,6 +67,19 @@ impl Color {
             Color::BrightMagenta => "\x1B[105m".to_string(),
             Color::BrightCyan => "\x1B[106m".to_string(),
             Color::BrightWhite => "\x1B[107m".to_string(),
+        }
+    }
+}
+
+use std::fmt::{Display, Formatter, Result};
+impl Display for Color {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            Color::RGB(Some(name), _, _, _) => write!(f, "{}", name),
+            Color::U8(Some(name), _) => write!(f, "{}", name),
+            Color::RGB(None, r, g, b) => write!(f, "RGB({},{},{})", r, g, b),
+            Color::U8(None, n) => write!(f, "U8({})", n),
+            _ => write!(f, "{}", self.to_string()),
         }
     }
 }

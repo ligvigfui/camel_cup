@@ -20,4 +20,12 @@ impl Player {
             owned_tip_cards: Vec::new(),
         }
     }
+
+    pub fn new_vec(names: Vec<Option<String>>) -> Vec<Player> {
+        let mut result = Vec::with_capacity(names.len());
+        for (i, &name) in names.iter().enumerate() {
+            result.push(Player::new(name, i));
+        }
+        result
+    }
 }

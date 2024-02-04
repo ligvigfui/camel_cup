@@ -1,8 +1,6 @@
 pub mod color;
 pub mod format;
 
-use std::fmt::{Display, Formatter, Result};
-
 pub use color::*;
 pub use format::*;
 
@@ -65,6 +63,20 @@ impl ColoredString {
     }
 }
 
+pub(crate) trait PushColoredString {
+    fn push_colored(&mut self, colored: ColoredString);
+}
+
+impl PushColoredString for String {
+    fn push_colored(&mut self, colored: ColoredString) {
+        match colored.format.reset_at_end {
+            true => self.push_str(&format!("{}{}{}", colored.format.to_escape_codes(), colored.text, "\x1B[0m")),
+            false => self.push_str(&format!("{}{}", colored.format.to_escape_codes(), colored.text)),
+        }
+    }
+}
+
+use std::fmt::{Display, Formatter, Result};
 impl Display for ColoredString {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self.format.reset_at_end {

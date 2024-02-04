@@ -8,38 +8,38 @@ pub struct CamelCup {
     current_player: usize,
     options: Options,
     camels: Vec<Camel>,
-    tip_cards: Vec<Vec<TipCard>>,
+    tip_cards_by_color: Vec<Vec<TipCard>>,
     players: Vec<Player>,
-    winer_endgametipcards: Vec<EndgameTipcard>,
-    loser_endgametipcards: Vec<EndgameTipcard>,
-    common_endgametipcards: Vec<EndgameTipcard>,
+    winer_oweralltipcards: Vec<OwerallTipcard>,
+    loser_oweralltipcards: Vec<OwerallTipcard>,
+    common_oweralltipcards: Vec<OwerallTipcard>,
 }
 
 impl CamelCup {
-    pub fn new(players: Vec<Player>) -> CamelCup {
+    pub fn new(options: Options) -> CamelCup {
         CamelCup {
             current_player: 0,
-            options: Options::new(),
+            options,
             camels: setup_camels(),
-            tip_cards: setup_tip_cards(),
-            common_endgametipcards: setup_endgame_tipcards(players.len()),
-            players,
-            winer_endgametipcards: Vec::new(),
-            loser_endgametipcards: Vec::new(),
+            tip_cards_by_color: TipCard::new_vec(options.camel_colors, options.leg_tips),
+            players: Player::new_vec(options.player_names),
+            winer_oweralltipcards: Vec::new(),
+            loser_oweralltipcards: Vec::new(),
+            common_oweralltipcards: setup_endgame_tipcards(options.player_names.len()),
         }
     }
     pub fn a_3_player_new_game() -> CamelCup {
-        CamelCup::new(vec![Player::new(None, 0), Player::new(None, 1), Player::new(None, 2)])
+        CamelCup::a_n_player_game(3)
     }
     pub fn a_n_player_game(n: usize) -> CamelCup {
-        let mut players = Vec::new();
+        let mut players = Vec::with_capacity(n);
         for i in 0..n {
-            players.push(Player::new(None, i));
+            players.push(None);
         }
-        CamelCup::new(players)
+        CamelCup::new(Options::new(players))
     }
-    pub fn move_tip_card(&mut self, player_number: usize, tip_card_color: &str) -> Result<(), &'static str> {
-        for color in self.tip_cards.iter_mut() {
+    pub fn move_tip_card(&mut self, player_number: usize, tip_card_color: Color) -> Result<(), &'static str> {
+        for color in self.tip_cards_by_color.iter_mut() {
             for card in color.iter_mut() {
                 if card.color == tip_card_color {
                     let tip_card = match color.pop() {
@@ -115,13 +115,13 @@ impl CamelCup {
         if player_number >= self.players.len() {
             return Err("player_number is out of bounds");
         }
-        for (i, endgametipcard) in self.common_endgametipcards.iter().enumerate() {
+        for (i, endgametipcard) in self.common_oweralltipcards.iter().enumerate() {
             if endgametipcard.color == color && endgametipcard.owner == player_number {
                 if winer {
-                    self.winer_endgametipcards.push(self.common_endgametipcards.remove(i));
+                    self.winer_oweralltipcards.push(self.common_oweralltipcards.remove(i));
                     return Ok(());
                 } else {
-                    self.loser_endgametipcards.push(self.common_endgametipcards.remove(i));
+                    self.loser_oweralltipcards.push(self.common_oweralltipcards.remove(i));
                     return Ok(());
                 }
             }
@@ -134,7 +134,7 @@ impl CamelCup {
         if human {println!("{:?}", self);}
         let mut winer_reward = vec![2, 3, 5, 8];
         let mut loser_reward = winer_reward.clone();
-        for endgametipcard in self.winer_endgametipcards.iter() {
+        for endgametipcard in self.winer_oweralltipcards.iter() {
             if endgametipcard.color == self.camels[0].color {
                 if human {println!("poping value from winer_reward {}", winer_reward[winer_reward.len()-1]);}
                 self.players[endgametipcard.owner].money += match winer_reward.pop() {
@@ -146,7 +146,7 @@ impl CamelCup {
                 self.players[endgametipcard.owner].money -= 1;
             }
         }
-        for endgametipcard in self.loser_endgametipcards.iter() {
+        for endgametipcard in self.loser_oweralltipcards.iter() {
             if endgametipcard.color == self.camels[self.camels.len()-1].color {
                 if human {println!("poping value from loser_reward {}", loser_reward[loser_reward.len()-1]);}
                 self.players[endgametipcard.owner].money += match loser_reward.pop() {
@@ -308,7 +308,7 @@ impl CamelCup {
         for player in self.players.iter_mut() {
             player.owned_tip_cards.clear();
         }
-        self.tip_cards = setup_tip_cards();
+        self.tip_cards_by_color = TipCard::new_vec(self.options.camel_colors, self.options.leg_tips)
     }
 
     //_______________________________________________________________________________________
@@ -326,7 +326,7 @@ impl CamelCup {
             if player.owned_tip_cards.len() > 0 {
                 print!("{}'s cards: ", player.name);
                 for card in player.owned_tip_cards.iter() {
-                    print!("{}{}\x1b[0m {},  ", card.display_color, card.color, card.value);
+                    print!("{} {},  ", Color!(card.color).foreground(card.color), card.value.get(&Place::Top(1)).unwrap());
                 }
                 println!();
             }
@@ -334,27 +334,28 @@ impl CamelCup {
         //display tip cards
         print!("{}", self.display_tip_cards());
         //display endgame info
-        println!("{} cards bet on the winer camel", Color!(self.winer_endgametipcards.len()).bold(true));
-        println!("{} cards bet on the losing camel", Color!(self.loser_endgametipcards.len()).bold(true));
+        println!("{} cards bet on the winer camel", Color!(self.winer_oweralltipcards.len()).bold(true));
+        println!("{} cards bet on the losing camel", Color!(self.loser_oweralltipcards.len()).bold(true));
     }
 
 
     //_______________________________________________________________________________________
     fn display_tip_cards(&self) -> String {
         let mut display = String::new();
-        for cards in self.tip_cards.iter() {
+        for cards in self.tip_cards_by_color.iter() {
             if cards.len() != 0 {
-                let _ = &display.push_str(&cards[0].display_color[..]);
-                let _ = &display.push_str(&cards[0].color[..]);
-                let _ = &display.push_str("\x1b[0m\x1b[1m:\t");
+                display.push_colored(Color!(format!("{}\t", cards[0].color.to_string())).foreground(cards[0].color));
             } else {
                 continue;
             }
-            for card in cards.iter() {
-                let _ = &display.push_str(&card.value.to_string()[..]);
-                let _ = &display.push_str(",\t");
+            let mut card_values = String::new();
+            for (i, card) in cards.iter().enumerate() {
+                card_values.push_str(&card.value.get(&Place::Top(1)).unwrap().to_string()[..]);
+                if i != cards.len() {
+                    card_values.push_str(",\t");
+                }
             }
-            let _ = &display.push_str("\x1b[0m\n");
+            display.push_colored(Color!(card_values).bold(true))
         }
         display
     }
@@ -505,7 +506,7 @@ impl CamelCup {
         println!("{}", self.display_camels());
         println!("Which camel do you want to bet on? (type the number)");
         let mut smoth_count = Vec::new();
-        for (i, tip_cards) in self.tip_cards.iter().enumerate() {
+        for (i, tip_cards) in self.tip_cards_by_color.iter().enumerate() {
             if tip_cards.len() > 0 {
                 smoth_count.push(i);
             } else {
@@ -513,7 +514,13 @@ impl CamelCup {
             }
         }
         for (i, count) in smoth_count.iter().enumerate() {
-            println!("{}: {}{}\x1b[0m \t{}", i, self.tip_cards[*count][0].display_color , self.tip_cards[*count][0].color, self.tip_cards[*count][self.tip_cards[*count].len() - 1].value); 
+            println!(
+                "{}: {} \t{}",
+                i,
+                Color!(self.tip_cards_by_color[*count][0].color.to_string())
+                    .foreground(self.tip_cards_by_color[*count][0].color),
+                self.tip_cards_by_color[*count][self.tip_cards_by_color[*count].len() - 1].value.get(&Place::Top(1)).unwrap()
+            );
         }
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("Failed to read line");
@@ -524,9 +531,10 @@ impl CamelCup {
         if input > smoth_count.len()-1 {
             return Err("Please type a number (0-displayed max)");
         }
-        let tip_card_color = self.tip_cards[smoth_count[input]][0].color.clone();
-        self.move_tip_card(self.current_player, &tip_card_color)?;
-        Ok(())
+        self.move_tip_card(
+            self.current_player,
+            self.tip_cards_by_color[smoth_count[input]][0].color
+        )
     }
 
     //_______________________________________________________________________________________
@@ -547,17 +555,17 @@ impl CamelCup {
         }
         clear_screen();
         println!("{}", self.display_camels());
-        if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_endgametipcards.len());}
-        else {println!("Currently {} cards bet on the loser camel", self.loser_endgametipcards.len());}
+        if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_oweralltipcards.len());}
+        else {println!("Currently {} cards bet on the loser camel", self.loser_oweralltipcards.len());}
         println!("Which camel do you want to bet on? (type the number)");
         let mut endgametipcards = Vec::new();
-        for (i, endgametipcard) in self.common_endgametipcards.iter().enumerate() {
+        for (i, endgametipcard) in self.common_oweralltipcards.iter().enumerate() {
             if endgametipcard.owner == self.current_player {
                 endgametipcards.push(i);
             }
         }
         for (i, common_i) in endgametipcards.iter().enumerate() {
-            println!("{}: {}{}\x1b[0m", i, self.common_endgametipcards[*common_i].display_color, self.common_endgametipcards[*common_i].color);
+            println!("{}: {}{}\x1b[0m", i, self.common_oweralltipcards[*common_i].display_color, self.common_oweralltipcards[*common_i].color);
         }
         let mut input2 = String::new();
         io::stdin().read_line(&mut input2).expect("Failed to read line");
@@ -568,7 +576,7 @@ impl CamelCup {
         if input2 > endgametipcards.len()-1 {
             return Err("Please type a number (0-displayed max)");
         }
-        let tip_card_color = self.common_endgametipcards[endgametipcards[input2]].color.clone();
+        let tip_card_color = self.common_oweralltipcards[endgametipcards[input2]].color.clone();
         self.end_game_bet(self.current_player, input == 0, &tip_card_color)?;
         Ok(())
     }
@@ -605,10 +613,10 @@ impl CamelCup {
             inputs.push((self.camels[i].y/self.camels.len() as u8) as f64);
         }
         //34+5 = 39 inputs
-        for color in &self.tip_cards {
+        for color in &self.tip_cards_by_color {
             match color.last() {
                 Some(card) => {
-                    inputs.push((card.value/5) as f64);
+                    inputs.push((card.value.get(&Place::Top(1)).unwrap() / 5) as f64);
                 },
                 None => {
                     inputs.push(0 as f64);
@@ -616,8 +624,8 @@ impl CamelCup {
             }
         }
         //39+2 = 41 inputs
-        inputs.push((self.winer_endgametipcards.len()/5) as f64);
-        inputs.push((self.loser_endgametipcards.len()/5) as f64);
+        inputs.push((self.winer_oweralltipcards.len()/5) as f64);
+        inputs.push((self.loser_oweralltipcards.len()/5) as f64);
         inputs
     }
 
@@ -647,47 +655,39 @@ mod tests {
         let game = CamelCup::a_3_player_new_game();
         assert_eq!(game.options.map_len, 16);
         assert_eq!(game.camels.len(), 5);
-        assert_eq!(game.tip_cards.len(), 5);
-        assert_eq!(game.tip_cards[0].len(), 3);
+        assert_eq!(game.tip_cards_by_color.len(), 5);
+        assert_eq!(game.tip_cards_by_color[0].len(), 3);
         assert_eq!(game.players.len(), 3);
         assert_eq!(game.players[0].name, "Player0");
         assert_eq!(game.players[0].money, 3);
         assert_eq!(game.players[0].placeable_card.x, 0);
         assert_eq!(game.players[0].placeable_card.faceup, false);
         assert_eq!(game.players[0].owned_tip_cards.len(), 0);
-        assert_eq!(game.winer_endgametipcards.len(), 0);
+        assert_eq!(game.winer_oweralltipcards.len(), 0);
         assert_eq!(game.current_player, 0);
-        assert_eq!(game.loser_endgametipcards.len(), 0);
-        assert_eq!(game.common_endgametipcards.len(), 15);
+        assert_eq!(game.loser_oweralltipcards.len(), 0);
+        assert_eq!(game.common_oweralltipcards.len(), 15);
         }
     #[test]
     fn test_get_tip_card() {
-        let mut players = Vec::new();
-        for i in 1..3 {
-            players.push(Player::new(None, i));
-        }
-        let mut game = CamelCup::new(players);
-        game.move_tip_card(0, "white").unwrap();
+        let mut game = CamelCup::a_3_player_new_game();
+        game.move_tip_card(0, Color::White).unwrap();
         assert_eq!(game.players[0].owned_tip_cards.len(), 1);
-        assert_eq!(game.players[0].owned_tip_cards[0].color, "white");
-        assert_eq!(game.players[0].owned_tip_cards[0].value, 5);
-        assert_eq!(game.tip_cards.len(), 5);
-        assert_eq!(game.tip_cards[0].len(), 2);
-        assert_eq!(game.tip_cards[0].pop().unwrap().value, 3);
-        assert_eq!(game.tip_cards[0].pop().unwrap().value, 2);
+        assert_eq!(game.players[0].owned_tip_cards[0].color, Color::White);
+        assert_eq!(game.players[0].owned_tip_cards[0].value.get(&Place::Top(1)).unwrap(), &5);
+        assert_eq!(game.tip_cards_by_color.len(), 5);
+        assert_eq!(game.tip_cards_by_color[0].len(), 2);
+        assert_eq!(game.tip_cards_by_color[0].pop().unwrap().value.get(&Place::Top(1)).unwrap(), &3);
+        assert_eq!(game.tip_cards_by_color[0].pop().unwrap().value.get(&Place::Top(1)).unwrap(), &2);
     }
 
     #[test]
     fn test_get_tip_card_error() {
-        let mut players = Vec::new();
-        for i in 1..3 {
-            players.push(Player::new(None, i));
-        }
-        let mut game = CamelCup::new(players);
-        game.move_tip_card(0, "white").unwrap();
-        game.move_tip_card(0, "white").unwrap();
-        game.move_tip_card(0, "white").unwrap();
-        assert_eq!(game.move_tip_card(0, "white"), Err("No more cards of this color left"));
+        let mut game = CamelCup::a_3_player_new_game();
+        game.move_tip_card(0, Color::White).unwrap();
+        game.move_tip_card(0, Color::White).unwrap();
+        game.move_tip_card(0, Color::White).unwrap();
+        assert_eq!(game.move_tip_card(0, Color::White), Err("No more cards of this color left"));
     }
 
     #[test]
@@ -737,7 +737,7 @@ mod tests {
         assert_eq!(game.end_game_bet(1, true, "white"), Ok(()));
         assert_eq!(game.end_game_bet(1, false, "white"), Err("You already bet on this color"));
         assert_eq!(game.end_game_bet(2, false, "white"), Ok(()));
-        assert_eq!(game.common_endgametipcards.len(), 12);
+        assert_eq!(game.common_oweralltipcards.len(), 12);
     }
 
 
@@ -779,24 +779,16 @@ mod tests {
     
     #[test]
     fn test_end_game_evaluate(){
-        let players = vec![
-            Player::new(None, 0),
-            Player::new(None, 1),
-            Player::new(None, 2),
-            Player::new(None, 3),
-            Player::new(None, 4),
-            Player::new(None, 5),
-        ];
-        let mut game = CamelCup::new(players);
+        let mut game = CamelCup::a_n_player_game(6);
         game.end_game_bet(0, true, "white").unwrap();
         game.end_game_bet(1, false, "white").unwrap();
         game.end_game_bet(2, true, "white").unwrap();
         assert_eq!(game.players[0].money, 3);
         assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 3);
-        assert_eq!(game.winer_endgametipcards.len(), 2);
-        assert_eq!(game.loser_endgametipcards.len(), 1);
-        assert_eq!(game.common_endgametipcards.len(), 27);
+        assert_eq!(game.winer_oweralltipcards.len(), 2);
+        assert_eq!(game.loser_oweralltipcards.len(), 1);
+        assert_eq!(game.common_oweralltipcards.len(), 27);
         game.end_game_bet(3, false, "orange").unwrap();
         game.end_game_bet(4, false, "orange").unwrap();
         game.end_game_bet(5, true, "orange").unwrap();
@@ -871,16 +863,16 @@ mod tests {
     #[test]
     fn evaluate_end_turn(){
         let mut game = CamelCup::a_n_player_game(5);
-        game.move_tip_card(game.current_player, "white").unwrap();
+        game.move_tip_card(game.current_player, Color::White).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, "white").unwrap();
+        game.move_tip_card(game.current_player, Color::White).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, "white").unwrap();
+        game.move_tip_card(game.current_player, Color::White).unwrap();
         game.next_player();
-        assert_eq!(game.move_tip_card(game.current_player, "white"), Err("No more cards of this color left"));
-        game.move_tip_card(game.current_player, "green").unwrap();
+        assert_eq!(game.move_tip_card(game.current_player, Color::White), Err("No more cards of this color left"));
+        game.move_tip_card(game.current_player, Color::Green).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, "blue").unwrap();
+        game.move_tip_card(game.current_player, Color::Blue).unwrap();
         game.next_player();
         game.move_camel("white", 3).unwrap();
         game.next_player();
@@ -901,10 +893,10 @@ mod tests {
     #[test]
     fn reset() {
         let mut game = CamelCup::a_n_player_game(5);
-        game.move_tip_card(game.current_player, "white").unwrap();
+        game.move_tip_card(game.current_player, Color::White).unwrap();
         game.reset_turn();
-        game.move_tip_card(game.current_player, "white").unwrap();
-        assert_eq!(game.players[0].owned_tip_cards[0].color, "white");
+        game.move_tip_card(game.current_player, Color::White).unwrap();
+        assert_eq!(game.players[0].owned_tip_cards[0].color, Color::White);
     }
 
     #[test]
