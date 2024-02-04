@@ -1,9 +1,6 @@
 use std::{error::Error, io};
 
-use camel_cup::{CamelCup, Player};
-
-
-
+use camel_cup::{clear_screen, CamelCup, Player};
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Welcome to the Camel Up game!");
@@ -42,11 +39,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     } else {
         for i in 0..player_number {
-            println!("debud: players are setting up without names {i}");
+            println!("debug: players are setting up without names {i}");
             names.push(Player::new(None, i));
         }
     }
-    print!("\x1b[2J");
+    clear_screen();
     let mut game = CamelCup::new(names);
     let mut running = true;
     while running {
@@ -54,11 +51,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             game.display();
             match game.turn() {
                 Ok(_) => {
-                    print!("\x1b[2J");
+                    clear_screen();
                     break;
                 },
                 Err(e) => {
-                    print!("\x1b[2J"); println!("Error: {}", e);
+                    clear_screen(); println!("Error: {}", e);
                     io::stdin().read_line(&mut String::new()).expect("Failed to read line");
                     continue;
                 },
