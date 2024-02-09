@@ -16,17 +16,17 @@ pub struct CamelCup {
 }
 
 impl CamelCup {
-    pub fn new(options: Options) -> CamelCup {
-        CamelCup {
+    pub fn new(options: Options) -> Result<CamelCup, String> {
+        Ok(CamelCup {
             current_player: 0,
             options,
-            camels: setup_camels(),
-            tip_cards_by_color: TipCard::new_vec(options.camel_colors, options.leg_tips),
+            camels: Camel::new_vec(options.camel_colors),
+            tip_cards_by_color: TipCard::new_vec(options.camel_colors, options.leg_tips)?,
             players: Player::new_vec(options.player_names),
             winer_oweralltipcards: Vec::new(),
             loser_oweralltipcards: Vec::new(),
             common_oweralltipcards: setup_endgame_tipcards(options.player_names.len()),
-        }
+        })
     }
     pub fn a_3_player_new_game() -> CamelCup {
         CamelCup::a_n_player_game(3)
@@ -36,7 +36,7 @@ impl CamelCup {
         for i in 0..n {
             players.push(None);
         }
-        CamelCup::new(Options::new(players))
+        CamelCup::new(Options::new(players)).unwrap()
     }
     pub fn move_tip_card(&mut self, player_number: usize, tip_card_color: Color) -> Result<(), &'static str> {
         for color in self.tip_cards_by_color.iter_mut() {
@@ -176,7 +176,7 @@ impl CamelCup {
 
     
     //______________________________________________________________________________________________________________________
-    fn set_camel_position(&mut self, camel_color: &str, x: u8, y: u8) {
+    fn set_camel_position(&mut self, camel_color: Color, x: u8, y: u8) {
         //! test fn only
         /*self.camels.iter().for_each(|(camel)| {
             /*if camel.x == x && camel.y == y {
@@ -195,7 +195,7 @@ impl CamelCup {
     }
 
     //______________________________________________________________________________________________________________________
-    pub fn move_camel(&mut self, camel_color: &str, amount: i8) -> Result<(), &'static str> {
+    pub fn move_camel(&mut self, camel_color: Color, amount: i8) -> Result<(), &'static str> {
         if amount <= 0 {
             return Err("amount must be positive");
         }
@@ -278,7 +278,7 @@ impl CamelCup {
     }
 
     //_______________________________________________________________________________________
-    fn camel_test_helper(&self, color: &str, assert_x: u8, assert_y: u8, assert_moved: bool) {
+    fn camel_test_helper(&self, color: Color, assert_x: u8, assert_y: u8, assert_moved: bool) {
         let camel = self.camels.iter().find(|camel| camel.color == color).unwrap();
         assert_eq!(assert_x, camel.x);
         assert_eq!(assert_y, camel.y);
@@ -367,20 +367,22 @@ impl CamelCup {
         for i in (0..=self.camels.len()-1).rev() {
             for (j, camel) in self.camels.iter().enumerate() {
                 if !camel.moved && i == j{
-                    let _ = &display.push_str(&camel.display_color[..]);
-                    let _ = &display.push_str(&camel.color[0..3]);
-                    let _ = &display.push_str("\x1b[0m");
+                    display.push_colored(
+                        Color!(&camel.color.to_string()[0..3])
+                        .foreground(camel.color)
+                    );
                 } else if i == j {
-                    let _ = &display.push_str("   ");
+                    display.push_str("   ");
                 }
             }
             for j in 1..self.options.map_len+1 {
                 let mut found = false;
                 for camel in self.camels.iter() {
                     if camel.x == j && camel.y == i as u8 {
-                        let _ = &display.push_str(&camel.display_color[..]);
-                        let _ = &display.push_str(&camel.color[0..3]);
-                        let _ = &display.push_str("\x1b[0m");
+                        display.push_colored(
+                            Color!(&camel.color.to_string()[0..3])
+                            .foreground(camel.color)
+                        );
                         found = true;
                     }
                 }
@@ -454,17 +456,17 @@ impl CamelCup {
     //_______________________________________________________________________________________
     pub fn rand_move_camel(&mut self) -> Result<(), &'static str>{
         let random =rand::thread_rng().gen_range(0..self.not_moved_camels().len());
-        let color = (self.not_moved_camels()[random]).to_string().clone();
+        let color = self.not_moved_camels()[random];
         let amount = rand::thread_rng().gen_range(1..4);
-        self.move_camel(&color[..], amount)
+        self.move_camel(color, amount)
     }
 
     //_______________________________________________________________________________________
-    fn not_moved_camels(&self) -> Vec<&str> {
+    fn not_moved_camels(&self) -> Vec<Color> {
         let mut not_moved_camels = Vec::new();
         for camel in self.camels.iter() {
             if !camel.moved {
-                not_moved_camels.push(&camel.color[..]);
+                not_moved_camels.push(camel.color);
             }
         }
         not_moved_camels
@@ -645,12 +647,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new_camel() {
-        let mut camels = setup_camels();
-        camels[0].x = 1;
-        assert_eq!(camels[0].x, 1);
-    }
-    #[test]
     fn test_new_game() {
         let game = CamelCup::a_3_player_new_game();
         assert_eq!(game.options.map_len, 16);
@@ -747,33 +743,33 @@ mod tests {
         for i in 0..game.camels.len() {
             game.camels[i].moved = true;
         }
-        game.set_camel_position("white", 1, 1);
-        game.set_camel_position("orange", 2, 1);
-        game.set_camel_position("blue", 3, 1);
-        game.set_camel_position("green", 4,1);
-        game.set_camel_position("yellow", 5, 1);
+        game.set_camel_position(Color::White, 1, 1);
+        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 2, 1);
+        game.set_camel_position(Color::Blue, 3, 1);
+        game.set_camel_position(Color::Green, 4,1);
+        game.set_camel_position(Color::Yellow, 5, 1);
         game.order_camels();
-        assert_eq!(game.camels[0].color, "yellow");
-        assert_eq!(game.camels[1].color, "green");
-        assert_eq!(game.camels[4].color, "white");
-        game.set_camel_position("white", 1, 1);
-        game.set_camel_position("orange", 1, 2);
-        game.set_camel_position("blue", 1, 3);
-        game.set_camel_position("green", 1,4);
-        game.set_camel_position("yellow", 1, 5);
+        assert_eq!(game.camels[0].color, Color::Yellow);
+        assert_eq!(game.camels[1].color, Color::Green);
+        assert_eq!(game.camels[4].color, Color::White);
+        game.set_camel_position(Color::White, 1, 1);
+        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 1, 2);
+        game.set_camel_position(Color::Blue, 1, 3);
+        game.set_camel_position(Color::Green, 1,4);
+        game.set_camel_position(Color::Yellow, 1, 5);
         game.order_camels();
-        assert_eq!(game.camels[0].color, "yellow");
-        assert_eq!(game.camels[1].color, "green");
-        assert_eq!(game.camels[4].color, "white");
-        game.set_camel_position("white", 1, 1);
-        game.set_camel_position("orange", 3, 1);
-        game.set_camel_position("blue", 6, 1);
-        game.set_camel_position("green", 1,2);
-        game.set_camel_position("yellow", 5, 1);
+        assert_eq!(game.camels[0].color, Color::Yellow);
+        assert_eq!(game.camels[1].color, Color::Green);
+        assert_eq!(game.camels[4].color, Color::White);
+        game.set_camel_position(Color::White, 1, 1);
+        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 3, 1);
+        game.set_camel_position(Color::Blue, 6, 1);
+        game.set_camel_position(Color::Green, 1,2);
+        game.set_camel_position(Color::Yellow, 5, 1);
         game.order_camels();
-        assert_eq!(game.camels[0].color, "blue");
-        assert_eq!(game.camels[1].color, "yellow");
-        assert_eq!(game.camels[4].color, "white");
+        assert_eq!(game.camels[0].color, Color::Blue);
+        assert_eq!(game.camels[1].color, Color::Yellow);
+        assert_eq!(game.camels[4].color, Color::White);
     }
 
     
@@ -815,16 +811,16 @@ mod tests {
     #[test]
     fn test_move_camel() {
         let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.move_camel("white", 0), Err("amount must be positive"));
-        assert_eq!(game.move_camel("white", 4), Err("amount is too big"));
-        assert_eq!(game.move_camel("asdn dasdcsa", 1), Err("No camel with this color"));
+        assert_eq!(game.move_camel(Color::White, 0), Err("amount must be positive"));
+        assert_eq!(game.move_camel(Color::White, 4), Err("amount is too big"));
+        assert_eq!(game.move_camel(Color::BrightBlack, 1), Err("No camel with this color"));
         game.place_card(0, 1, true).unwrap();
         game.next_player();
         //1
         game.place_card(1, 3, false).unwrap();
         game.next_player();
         //2
-        game.move_camel("white", 1).unwrap();
+        game.move_camel(Color::White, 1).unwrap();
         game.next_player();
         //0
         assert_eq!(game.camels[0].x, 2);
@@ -832,31 +828,31 @@ mod tests {
         assert_eq!(game.camels[0].moved, true);
         assert_eq!(game.players[0].money, 4);
         assert_eq!(game.players[2].money, 4);
-        assert_eq!(game.move_camel("white", 1), Err("camel already moved this turn"));
-        game.move_camel("green", 2).unwrap();
+        assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn"));
+        game.move_camel(Color::Green, 2).unwrap();
         game.next_player();
         //1
-        game.camel_test_helper("green", 2, 1, true);
+        game.camel_test_helper(Color::Green, 2, 1, true);
         assert_eq!(game.players[0].money, 5);
         assert_eq!(game.players[2].money, 4);
-        game.move_camel("blue", 3).unwrap();
+        game.move_camel(Color::Blue, 3).unwrap();
         game.next_player();
         //2
-        game.camel_test_helper("blue", 2, 0, true);
+        game.camel_test_helper(Color::Blue, 2, 0, true);
         assert_eq!(game.players[0].money, 5);
         assert_eq!(game.players[2].money, 4);
         assert_eq!(game.players[1].money, 5);
         for camel in game.camels.iter_mut() {
             camel.moved = false;
         }
-        game.move_camel("white", 1).unwrap();
-        game.camel_test_helper("white", 2, 0, true);
-        game.camel_test_helper("green", 2, 1, false);
-        game.camel_test_helper("blue", 2, 2, false);
-        game.move_camel("green", 3).unwrap();
-        game.camel_test_helper("white", 2, 0, true);
-        game.camel_test_helper("green", 5, 0, true);
-        game.camel_test_helper("blue", 5, 1, false);
+        game.move_camel(Color::White, 1).unwrap();
+        game.camel_test_helper(Color::White, 2, 0, true);
+        game.camel_test_helper(Color::Green, 2, 1, false);
+        game.camel_test_helper(Color::Blue, 2, 2, false);
+        game.move_camel(Color::Green, 3).unwrap();
+        game.camel_test_helper(Color::White, 2, 0, true);
+        game.camel_test_helper(Color::Green, 5, 0, true);
+        game.camel_test_helper(Color::Blue, 5, 1, false);
         
     }
     
@@ -874,11 +870,11 @@ mod tests {
         game.next_player();
         game.move_tip_card(game.current_player, Color::Blue).unwrap();
         game.next_player();
-        game.move_camel("white", 3).unwrap();
+        game.move_camel(Color::White, 3).unwrap();
         game.next_player();
-        game.move_camel("green", 2).unwrap();
+        game.move_camel(Color::Green, 2).unwrap();
         game.next_player();
-        game.move_camel("blue", 1).unwrap();
+        game.move_camel(Color::Blue, 1).unwrap();
         game.next_player();
         game.camels[3].moved = true;
         game.camels[4].moved = true;
@@ -911,7 +907,7 @@ mod tests {
         "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
         "                                                   \n";
         assert_eq!(game.display_camels(), string);
-        game.move_camel("white", 1).unwrap();
+        game.move_camel(Color::White, 1).unwrap();
         println!("{:?}", game.camels);
         println!("{}", game.display_camels());
         let string = 
@@ -923,7 +919,7 @@ mod tests {
         "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
         "                                                   \n";
         assert_eq!(game.display_camels(), string);
-        game.move_camel("blue", 1).unwrap();
+        game.move_camel(Color::Blue, 1).unwrap();
         println!("{:?}", game.camels);
         println!("{}", game.display_camels());
         assert_eq!(game.camels[0].x, 1);
@@ -936,7 +932,7 @@ mod tests {
         "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
         "                                                   \n";
         assert_eq!(game.display_camels(), string);
-        game.move_camel("green", 3).unwrap();
+        game.move_camel(Color::Green, 3).unwrap();
         println!("{}", game.display_camels());
         let string = "\u{1b}[38;2;255;165;0mora\u{1b}[0m                                                \n".to_owned() +
         "\u{1b}[33myel\u{1b}[0m                                                \n" +
@@ -946,7 +942,7 @@ mod tests {
         "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
         "                                                   \n";
         assert_eq!(game.display_camels(), string);
-        game.move_camel("orange", 2).unwrap();
+        game.move_camel(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 2).unwrap();
         println!("{}", game.display_camels());
         let string = "\u{1b}[33myel\u{1b}[0m                                                \n".to_owned() +
         "                                                   \n" +
