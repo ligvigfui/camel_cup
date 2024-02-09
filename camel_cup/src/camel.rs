@@ -9,16 +9,16 @@ pub struct Camel {
 }
 
 impl Camel {
-    pub fn new(color: Color) -> Camel {
+    pub fn new(color: &Color) -> Camel {
         Camel {
-            color,
+            color: color.clone(),
             x: 0,
             y: 0,
             moved: false,
         }
     }
 
-    pub fn new_vec(colors: Vec<Color>) -> Vec<Camel> {
+    pub fn new_vec(colors: &Vec<Color>) -> Vec<Camel> {
         let mut result = Vec::with_capacity(colors.len());
         for color in colors {
             result.push(Camel::new(color));

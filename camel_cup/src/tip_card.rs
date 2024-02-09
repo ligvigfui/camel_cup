@@ -7,7 +7,7 @@ pub struct TipCard {
 }
 
 impl TipCard {
-    pub fn new(color: Color, value: HashMap<Place, i8>) -> Result<TipCard, String> {
+    pub fn new(color: &Color, value: HashMap<Place, i8>) -> Result<TipCard, String> {
         // trow error if value contains more then 1 remaining
         let mut remaining = 0;
         for (place, _) in &value {
@@ -23,17 +23,18 @@ impl TipCard {
         if remaining > 1 {
             return Err("More then 1 remaining place in tip card".to_string());
         }
-        Ok(TipCard { color, value })
+        Ok(TipCard {
+            color: color.clone(),
+            value
+        })
     }
 
-    pub fn new_vec(colors: Vec<Color>, values: Vec<HashMap<Place, i8>>) -> Result<Vec<Vec<TipCard>>, String> {
+    pub fn new_vec(colors: &Vec<Color>, values: Vec<HashMap<Place, i8>>) -> Result<Vec<TipCard>, String> {
         let mut tip_cards = Vec::new();
         for color in colors {
-            let mut color_tip_cards = Vec::new();
             for value in values {
-                color_tip_cards.push(TipCard::new(color, value)?);
+                tip_cards.push(TipCard::new(color, value)?);
             }
-            tip_cards.push(color_tip_cards);
         }
         Ok(tip_cards)
     }
@@ -65,12 +66,12 @@ mod tests {
 
     #[test]
     fn test_evaluation() {
-        let mut tip_card = TipCard::new(Color::White, vec![
+        let mut tip_card = TipCard::new(&Color::White, vec![
             (Place::Top(1), 5),
             (Place::Top(2), 1),
             (Place::BottomRemaining, -1),
         ].into_iter().collect()).unwrap();
-        let camels = Camel::new_vec(vec![Color::White, Color::Red, Color::Green, Color::Blue]);
+        let camels = Camel::new_vec(&vec![Color::White, Color::Red, Color::Green, Color::Blue]);
         assert_eq!(tip_card.evaluate(&camels), 5);
         tip_card.color = Color::Red;
         assert_eq!(tip_card.evaluate(&camels), 1);

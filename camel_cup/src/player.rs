@@ -3,9 +3,10 @@ use crate::*;
 #[derive(Debug)]
 pub struct Player {
     pub(crate) name: String,
-    pub(crate) money: i32,
+    pub(crate) money: u16,
     pub(crate) placeable_card: PlaceCard,
-    pub(crate) owned_tip_cards: Vec<TipCard>,
+    pub(crate) tip_cards: Vec<TipCard>,
+    pub(crate) owerall_tip_cards: Vec<OwerallTipcard>,
 }
 impl Player {
     pub fn new(name: Option<String>, number: usize) -> Player {
@@ -16,8 +17,9 @@ impl Player {
         Player {
             name,
             money: 3,
-            placeable_card: PlaceCard { x: 0, faceup: false },
-            owned_tip_cards: Vec::new(),
+            placeable_card: PlaceCard::new(),
+            tip_cards: Vec::new(),
+            owerall_tip_cards: Vec::new(),
         }
     }
 
@@ -27,5 +29,13 @@ impl Player {
             result.push(Player::new(name, i));
         }
         result
+    }
+
+    pub fn modify_money(&mut self, amount: i8) {
+        if self.money as i32 + (amount as i32) < 0 {
+            self.money = 0;
+            return;
+        }
+        self.money = (self.money as i32 + (amount as i32)) as u16
     }
 }
