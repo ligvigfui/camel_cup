@@ -3,17 +3,17 @@ use crate::*;
 #[derive(Debug)]
 pub struct TipCard {
     pub(crate) color: Color,
-    pub(crate) value: HashMap<Place, i8>,
+    pub(crate) values: HashMap<Place, i8>,
 }
 
 impl TipCard {
-    pub fn new(color: &Color, value: HashMap<Place, i8>) -> Result<TipCard, String> {
+    pub fn new(color: &Color, values: &HashMap<Place, i8>) -> Result<TipCard, &'static str> {
         // trow error if value contains more then 1 remaining
         let mut remaining = 0;
-        for (place, _) in &value {
+        for (place, _) in values {
             match place {
-                Place::BottomRemaining |
                 Place::TopRemaining |
+                Place::MiddleRemaining |
                 Place::BottomRemaining => {
                     remaining += 1;
                 }
@@ -21,18 +21,18 @@ impl TipCard {
             }
         }
         if remaining > 1 {
-            return Err("More then 1 remaining place in tip card".to_string());
+            return Err("More then 1 remaining place in tip card");
         }
         Ok(TipCard {
             color: color.clone(),
-            value
+            values: values.clone(),
         })
     }
 
-    pub fn new_vec(colors: &Vec<Color>, values: Vec<HashMap<Place, i8>>) -> Result<Vec<TipCard>, String> {
+    pub fn new_vec(options: &Options) -> Result<Vec<TipCard>, &'static str> {
         let mut tip_cards = Vec::new();
-        for color in colors {
-            for value in values {
+        for color in &options.camel_colors {
+            for value in &options.leg_tips {
                 tip_cards.push(TipCard::new(color, value)?);
             }
         }
@@ -40,23 +40,63 @@ impl TipCard {
     }
 
     pub fn evaluate(&self, camels: &[Camel]) -> i8 {
+        let position = Camel::place(&self.color, camels);
         let mut result = 0;
-        for (place, value) in &self.value {
+        for (place, value) in &self.values {
             match place {
                 Place::Top(n) => {
-                    if let Some(camel) = camels.iter().find(|camel| camel.color == self.color && camel.y == *n) {
+                    if position == *n as usize {
                         result += value;
                     }
                 }
+                Place::Bottom(n) => {
+                    if position == camels.len() - *n as usize {
+                        result += value;
+                    }
+                }
+                Place::TopRemaining |
+                Place::MiddleRemaining |
                 Place::BottomRemaining => {
-                    for camel in camels.iter().filter(|camel| camel.color == self.color) {
-                        result += value;
-                    }
+                    result += value;
                 }
-                _ => {}
+                Place::Wrong => todo!()
             }
         }
         result
+    }
+}
+
+impl CamelCup {
+    pub(crate) fn move_tip_card_player(&mut self, player_number: usize, tip_card_color: &Color) -> Result<(), &'static str> {
+        Player::number_out_of_bounds(&self, player_number)?;
+        
+        let mut max_amount = 0;
+        for card in self.tip_cards.iter() {
+            if &card.color == tip_card_color {
+                max_amount = match max_amount < *card.values.get(&Place::Top(1)).unwrap() {
+                    true => *card.values.get(&Place::Top(1)).unwrap(),
+                    false => max_amount,
+                };
+            }
+        };
+        match max_amount {
+            0 => Err("No more cards of this color left"),
+            _ => {
+                for (index, card) in self.tip_cards.iter().enumerate() {
+                    if &card.color == tip_card_color && *card.values.get(&Place::Top(1)).unwrap() == max_amount {
+                        let tip_card = self.tip_cards.remove(index);
+                        self.players[player_number].tip_cards.push(tip_card);
+                        return Ok(());
+                    }
+                }
+                Err("tip card / impl CamelCup::move_tip_card_player - did not find card again")
+            }
+        }
+    }
+    pub fn move_tip_card(&mut self, tip_card_color: &Color) -> Result<(), &'static str> {
+        self.move_tip_card_player(self.current_player, tip_card_color)?;
+        self.next_player();
+        Ok(())
     }
 }
 
@@ -66,12 +106,12 @@ mod tests {
 
     #[test]
     fn test_evaluation() {
-        let mut tip_card = TipCard::new(&Color::White, vec![
+        let mut tip_card = TipCard::new(&Color::White, &HashMap::from([
             (Place::Top(1), 5),
             (Place::Top(2), 1),
             (Place::BottomRemaining, -1),
-        ].into_iter().collect()).unwrap();
-        let camels = Camel::new_vec(&vec![Color::White, Color::Red, Color::Green, Color::Blue]);
+        ])).unwrap();
+        let camels = Camel::new_vec(&mut vec![Color::White, Color::Red, Color::Green, Color::Blue]);
         assert_eq!(tip_card.evaluate(&camels), 5);
         tip_card.color = Color::Red;
         assert_eq!(tip_card.evaluate(&camels), 1);

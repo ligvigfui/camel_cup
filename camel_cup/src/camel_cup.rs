@@ -1,31 +1,32 @@
-use rand::Rng;
-use std::io;
+use std::{io, mem::take};
 
 use crate::*;
 
 #[derive(Debug)]
 pub struct CamelCup {
-    current_player: usize,
-    options: Options,
-    camels: Vec<Camel>,
-    tip_cards: Vec<TipCard>,
-    players: Vec<Player>,
-    winer_oweralltipcards: Vec<OwerallTipcard>,
-    loser_oweralltipcards: Vec<OwerallTipcard>,
-    common_oweralltipcards: Vec<OwerallTipcard>,
+    pub current_player: usize,
+    pub map_len: u8,
+    pub dice_numbers: Vec<i8>,
+    pub owerall_tips_function: HashMap<Place, i8>,
+    pub camels: Vec<Camel>,
+    pub tip_cards: Vec<TipCard>,
+    pub players: Vec<Player>,
+    pub winer_oweralltipcards: Vec<OwerallTipcard>,
+    pub loser_oweralltipcards: Vec<OwerallTipcard>,
 }
 
 impl CamelCup {
-    pub fn new(options: Options) -> Result<CamelCup, String> {
+    pub fn new(options: &mut Options) -> Result<CamelCup, String> {
         Ok(CamelCup {
             current_player: 0,
-            options,
-            camels: Camel::new_vec(&options.camel_colors),
-            tip_cards: TipCard::new_vec(&options.camel_colors, options.leg_tips)?,
-            players: Player::new_vec(options.player_names),
+            map_len: take(&mut options.map_len),
+            dice_numbers: take(&mut options.dice_numbers),
+            tip_cards: TipCard::new_vec(&options)?,
+            players: Player::new_vec(options),
+            camels: Camel::new_vec(&mut take(&mut options.camel_colors)),
             winer_oweralltipcards: Vec::new(),
             loser_oweralltipcards: Vec::new(),
-            common_oweralltipcards: OwerallTipcard::new_vec(options.camel_colors, options.player_names.len()),
+            owerall_tips_function: take(&mut options.owerall_tips_function),
         })
     }
     pub fn a_3_player_new_game() -> CamelCup {
@@ -33,56 +34,10 @@ impl CamelCup {
     }
     pub fn a_n_player_game(n: usize) -> CamelCup {
         let mut players = Vec::with_capacity(n);
-        for i in 0..n {
+        for _ in 0..n {
             players.push(None);
         }
-        CamelCup::new(Options::new(players)).unwrap()
-    }
-    pub fn move_tip_card(&mut self, player_number: usize, tip_card_color: Color) -> Result<(), &'static str> {
-        let mut max_amount = 0;
-        for card in self.tip_cards.iter_mut() {
-            if card.color == tip_card_color {
-                max_amount = if max_amount < *card.value.get(&Place::Top(1)).unwrap() {*card.value.get(&Place::Top(1)).unwrap()} else  {max_amount};
-            }
-        };
-        match max_amount {
-            0 => Err("No more cards of this color left"),
-            _ => { 
-                todo!();
-                Ok(())
-            }
-        }
-    }
-    
-    pub fn place_card(&mut self, player_number: usize, x: u8, faceup: bool) -> Result<(), &'static str> {
-        if x < 1 || x > self.options.map_len {
-            return Err("x is out of bounds");
-        }
-        if player_number >= self.players.len() {
-            return Err("player_number is out of bounds");
-        }
-        for (i, player) in self.players.iter().enumerate() {
-            if player.placeable_card.x == x && self.players[player_number].placeable_card.x != x{
-                return Err("x is already occupied by some other player");
-            }
-            else if player.placeable_card.x == x+1 && self.players[player_number].placeable_card.x != x+1{
-                return Err("x nearby is already occupied by some other player");
-            }
-            else if player.placeable_card.x == x-1 && self.players[player_number].placeable_card.x != x-1 && x-1 != 0{
-                return Err("x nearby is already occupied by some other player");
-            }
-            if player_number == i && player.placeable_card.x == x && player.placeable_card.faceup == faceup {
-                return Err("You can't place Your card the same");
-            }
-        }
-        for camel in self.camels.iter() {
-            if camel.x == x {
-                return Err("x is already occupied by some camel(s)");
-            }
-        }
-        self.players[player_number].placeable_card.x = x;
-        self.players[player_number].placeable_card.faceup = faceup;
-        Ok(())
+        CamelCup::new(&mut Options::new(players)).unwrap()
     }
     pub fn current_player(&mut self) -> &mut Player {
         &mut self.players[self.current_player]
@@ -103,30 +58,11 @@ impl CamelCup {
     //______________________________________________________________________________________________________________________
     pub fn end_game_check(&self) -> bool {
         for camel in self.camels.iter() {
-            if camel.x > self.options.map_len {
+            if camel.x > self.map_len {
                 return true;
             }
         }
         false
-    }
-
-    //______________________________________________________________________________________________________________________
-    pub fn end_game_bet(&mut self, player_number: usize, winer: bool, color: Color) -> Result<(), &'static str> {
-        if player_number >= self.players.len() {
-            return Err("player_number is out of bounds");
-        }
-        for (i, endgametipcard) in self.common_oweralltipcards.iter().enumerate() {
-            if endgametipcard.color == color && endgametipcard.owner == player_number {
-                if winer {
-                    self.winer_oweralltipcards.push(self.common_oweralltipcards.remove(i));
-                    return Ok(());
-                } else {
-                    self.loser_oweralltipcards.push(self.common_oweralltipcards.remove(i));
-                    return Ok(());
-                }
-            }
-        }
-        Err("You already bet on this color")
     }
 
     //______________________________________________________________________________________________________________________
@@ -164,146 +100,12 @@ impl CamelCup {
         }
     }
 
-    //______________________________________________________________________________________________________________________
-    fn order_camels(&mut self){
-        let e:u8 = self.camels.len().try_into().unwrap();
-        self.camels.sort_by(|a, b|{ 
-            let c = a.x*e+a.y; 
-            let d:u8 = b.x*e+b.y;
-            d.cmp(&c)
-        });
-    }
-
-    
-    //______________________________________________________________________________________________________________________
-    fn set_camel_position(&mut self, camel_color: Color, x: u8, y: u8) {
-        //! test fn only
-        /*self.camels.iter().for_each(|(camel)| {
-            /*if camel.x == x && camel.y == y {
-                return Err("x and y are already occupied by some other camel");
-            }*/
-        });*/
-        for camel in self.camels.iter_mut() {
-            if camel.color == camel_color {
-                camel.x = x;
-                camel.y = y;
-                camel.moved = true;
-                return;
-            }
-        }
-        panic!("No camel with this color");
-    }
-
-    //______________________________________________________________________________________________________________________
-    pub fn move_camel(&mut self, camel_color: Color, amount: i8) -> Result<(), &'static str> {
-        if amount <= 0 {
-            return Err("amount must be positive");
-        }
-        if amount > self.options.dice_max_number {
-            return Err("amount is too big");
-        }
-        if !self.camels.iter().any(|camel| camel.color == camel_color) {
-            return Err("No camel with this color");
-        }
-        let mut x = 0;
-        let mut y = 0;
-        let mut camels_above = Vec::new();
-        let mut amount = amount;
-        for (camel_number, camel) in self.camels.iter_mut().enumerate() {
-            if camel.color == camel_color {
-                //println!("{} {} {} {}", camel.x, camel.y, camel.moved, camel.color);
-                if camel.moved {
-                    return Err("camel already moved this turn");
-                }
-                if camel.x == 0 {
-                    camels_above.push(camel_number);
-                }
-                x = camel.x;
-                y = camel.y;
-                camel.moved = true;
-                
-            }
-        }
-        // x 0 y 0
-        for (camel_number, camel) in self.camels.iter().enumerate() {
-            if camel.x == x && x !=0 && camel.y >= y {
-                camels_above.push(camel_number);
-            }
-        }
-        //println!("{} {} {:?}", x, y, camels_above);
-        let mut case1 = true;
-        for player in self.players.iter_mut() {
-            if player.placeable_card.x == (x as i16 + amount as i16) as u8 {
-                player.money += 1;
-                if player.placeable_card.faceup {
-                    case1 = true;
-                    amount += 1;
-                } else {
-                    case1 = false;
-                    amount -= 1;
-                }
-            }
-        }
-        self.players[self.current_player].money += 1;
-        let mut camels_below = 0;
-        if case1 {
-            //camels are moved above
-            for camel in self.camels.iter_mut() {
-                if camel.x == (x as i16 + amount as i16) as u8 {
-                    camels_below += 1;
-                }
-            }
-            for camel in camels_above.iter() {
-                self.camels[*camel].x += amount as u8; // todo check for potential overflow
-                self.camels[*camel].y += camels_below - y;
-            }
-        } else {
-            //camels are moved below 
-            //elevates the moving camels
-            for (camel_number, camel) in self.camels.iter_mut().enumerate() {
-                if camel.x == (x as i16 + amount as i16) as u8 && !camels_above.contains(&camel_number){
-                    camel.y += camels_above.len() as u8;
-                }
-            }
-            //moves the moving camels below
-            for camel in camels_above.iter() {
-                //println!("{} {} {}", camel, self.camels[*camel].x, self.camels[*camel].y);
-                self.camels[*camel].x += amount as u8; // todo check for potential overflow
-                self.camels[*camel].y -= y;
-                //println!("{} {} {}", camel, self.camels[*camel].x, self.camels[*camel].y);
-            }
-        }
-        self.order_camels();
-        Ok(())
-    }
-
-    //_______________________________________________________________________________________
-    fn camel_test_helper(&self, color: Color, assert_x: u8, assert_y: u8, assert_moved: bool) {
-        let camel = self.camels.iter().find(|camel| camel.color == color).unwrap();
-        assert_eq!(assert_x, camel.x);
-        assert_eq!(assert_y, camel.y);
-        assert_eq!(assert_moved, camel.moved);
-    }
-
     //_______________________________________________________________________________________
     pub fn evaluate_end_turn(&mut self) {
         for player in self.players.iter_mut() {
-            for card in player.tip_cards.iter_mut() {
-                let amount = card.evaluate(&self.camels);
-                player.modify_money(amount)
-            }
+            let mut cards = player.evaluate_tip_cards(&self.camels);
+            self.tip_cards.append(&mut cards);
         }
-    }
-
-    //_______________________________________________________________________________________
-    pub fn reset_turn(&mut self) {
-        for camel in self.camels.iter_mut() {
-            camel.moved = false;
-        }
-        for player in self.players.iter_mut() {
-            player.tip_cards.clear();
-        }
-        self.tip_cards = TipCard::new_vec(&self.options.camel_colors, self.options.leg_tips).unwrap()
     }
 
     //_______________________________________________________________________________________
@@ -321,7 +123,7 @@ impl CamelCup {
             if player.tip_cards.len() > 0 {
                 print!("{}'s cards: ", player.name);
                 for card in player.tip_cards.iter() {
-                    print!("{} {},  ", Color!(card.color).foreground(card.color), card.value.get(&Place::Top(1)).unwrap());
+                    print!("{} {},  ", Color!(card.color).foreground(&card.color), card.values.get(&Place::Top(1)).unwrap());
                 }
                 println!();
             }
@@ -337,20 +139,17 @@ impl CamelCup {
     //_______________________________________________________________________________________
     fn display_tip_cards(&self) -> String {
         let mut display = String::new();
-        for cards in self.tip_cards.iter() {
-            if cards.len() != 0 {
-                display.push_colored(Color!(format!("{}\t", cards[0].color.to_string())).foreground(cards[0].color));
+        let mut cards: HashMap<&Color, Vec<String>> = HashMap::new();
+        for card in self.tip_cards.iter() {
+            if cards.contains_key(&card.color) {
+                cards.get_mut(&card.color).unwrap().push(card.values.get(&Place::Top(1)).unwrap().to_string());
             } else {
-                continue;
+                cards.insert(&card.color, vec![card.values.get(&Place::Top(1)).unwrap().to_string()]);
             }
-            let mut card_values = String::new();
-            for (i, card) in cards.iter().enumerate() {
-                card_values.push_str(&card.value.get(&Place::Top(1)).unwrap().to_string()[..]);
-                if i != cards.len() {
-                    card_values.push_str(",\t");
-                }
-            }
-            display.push_colored(Color!(card_values).bold(true))
+        }
+        for (&color, card_values) in cards.iter_mut() {
+            card_values.sort_by(|a, b| b.cmp(a));
+            display.push_colored(Color!(format!("{}: {}\t", color.to_string(), card_values.join("\t"))).foreground(color));
         }
         display
     }
@@ -364,280 +163,165 @@ impl CamelCup {
                 if !camel.moved && i == j{
                     display.push_colored(
                         Color!(&camel.color.to_string()[0..3])
-                        .foreground(camel.color)
+                        .foreground(&camel.color)
                     );
                 } else if i == j {
                     display.push_str("   ");
                 }
             }
-            for j in 1..self.options.map_len+1 {
+            for j in 1..self.map_len+1 {
                 let mut found = false;
                 for camel in self.camels.iter() {
                     if camel.x == j && camel.y == i as u8 {
                         display.push_colored(
                             Color!(&camel.color.to_string()[0..3])
-                            .foreground(camel.color)
+                            .foreground(&camel.color)
                         );
                         found = true;
                     }
                 }
                 if !found {
-                    let _ = &display.push_str("   ");
+                    display.push_str("   ");
                 }
             }
-            let _ = &display.push_str("\n");
+            display.push_str("\n");
         }
-        for i in 0..self.options.map_len+1 {
+        for i in 0..self.map_len+1 {
             if i > 9 {
-                let _ = &display.push_str(&format!("_{}", i));
+                display.push_str(&format!("_{}", i));
             } else {
-                let _ = &display.push_str(&format!("_{}_", i));
+                display.push_str(&format!("_{}_", i));
             }
         }
-        let _ = &display.push_str("__winner's_on_top__\n   ");
+        display.push_str("__winner's_on_top__\n   ");
         let mut player_found = false;
-        for i in 1..self.options.map_len+1 {
+        for i in 1..self.map_len+1 {
             for (j, player) in self.players.iter().enumerate() {
-                if player.placeable_card.x == i && j == self.current_player{
-                    let _ = &display.push_str("\x1b[31m");
+                if player.placeable_card.x == i && j == self.current_player {
                     if player.placeable_card.faceup {
-                        let _ = &display.push_str(" + ");
+                        display.push_colored(Color!(" + ").bold(true))
                     } else {
-                        let _ = &display.push_str(" - ");
+                        display.push_colored(Color!(" - ").bold(true))
                     }
-                    let _ = &display.push_str("\x1b[0m");
                     player_found = true;
                 } else if player.placeable_card.x == i {
                     if player.placeable_card.faceup {
-                        let _ = &display.push_str(" + ");
+                        display.push_str(" + ");
                     } else {
-                        let _ = &display.push_str(" - ");
+                        display.push_str(" - ");
                     }
                     player_found = true;
                 }
             }
             if !player_found {
-                let _ = &display.push_str("   ");
+                display.push_str("   ");
             }
             player_found = false;
         }
-        let _ = &display.push_str("\n");
+        display.push_str("\n");
         display
     }
 
     //_______________________________________________________________________________________
-    pub fn turn(&mut self) -> Result<(), &'static str> {
+    pub fn human_turn(&mut self) -> Result<(), String> {
         println!("What do you want to do from the following options? (type the number)");
         let options = vec!["place your card", "move camel", "bet on camel", "bet on endgame"];
         for (i, option) in options.iter().enumerate() {
             println!("{}: {}", i, option);
         }
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-        let input: usize = match input.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number (0-3)"),
-        };
+        let input = read_usize(3)?;
         match input {
             0 => self.human_place_card()?,
             1 => self.rand_move_camel()?,
             2 => self.human_bet_on_camel()?,
             3 => self.human_bet_on_endgame()?,
-            _ => return Err("Please type a number (0-3)"),
+            _ => return Err("Please type a number (0-3)".to_string()),
         }
         Ok(())
     }
 
-    //_______________________________________________________________________________________
-    pub fn rand_move_camel(&mut self) -> Result<(), &'static str>{
-        let random =rand::thread_rng().gen_range(0..self.not_moved_camels().len());
-        let color = self.not_moved_camels()[random];
-        let amount = rand::thread_rng().gen_range(1..4);
-        self.move_camel(color, amount)
-    }
-
-    //_______________________________________________________________________________________
-    fn not_moved_camels(&self) -> Vec<Color> {
+    pub(crate) fn not_moved_camels(&self) -> Vec<Color> {
         let mut not_moved_camels = Vec::new();
         for camel in self.camels.iter() {
             if !camel.moved {
-                not_moved_camels.push(camel.color);
+                not_moved_camels.push(camel.color.clone());
             }
         }
         not_moved_camels
     }
 
     //_______________________________________________________________________________________
-    fn human_place_card(&mut self) -> Result<(), &'static str> {
+    fn human_place_card(&mut self) -> Result<(), String> {
         println!("Where do you want to place your card? (type the number)");
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-        let input: u8 = match input.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number"),
-        };
-        if input > self.options.map_len {
-            return Err("Please type a number (1-16)");
-        }
+        let input = read_usize(self.map_len as usize)?;
         println!("Do you want to place your card faceup or facedown? (type the number)");
         let options = vec!["faceup", "facedown"];
         for (i, option) in options.iter().enumerate() {
             println!("{}: {}", i, option);
         }
-        let mut input2 = String::new();
-        io::stdin().read_line(&mut input2).expect("Failed to read line");
-        let input2: usize = match input2.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number (0-1)"),
-        };
-        if input2 > 1 {
-            return Err("Please type a number (0-1)");
+        let faceup = read_usize(options.len() - 1)?;
+        match self.place_card(input as u8, faceup == 0) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.to_string()),
         }
-        self.place_card(self.current_player, input, input2 == 0)?;
+    }
+
+    //_______________________________________________________________________________________
+    fn human_bet_on_camel(&mut self) -> Result<(), String> {
+        clear_screen();
+        println!("{}", self.display_camels());
+        println!("Which camel do you want to bet on? (type the number)");
+        let mut color_value = HashMap::new();
+        for tip_card in self.tip_cards.iter() {
+            if let Some(&value) = color_value.get(&tip_card.color) {
+                if value >= tip_card.values.get(&Place::Top(1)).unwrap() {
+                    continue;
+                }
+            }
+            color_value.insert(&tip_card.color, tip_card.values.get(&Place::Top(1)).unwrap());
+        }
+        let mut smoth_count: Vec<(&Color, i8)> = vec![];
+        for (&ref color, &value) in color_value.into_iter() {
+            smoth_count.push((&color, value));
+        }
+        for (i, (color, value)) in smoth_count.iter().enumerate() {
+            println!(
+                "{}: {} \t{}",
+                i,
+                Color!(color.to_string()).foreground(&color),
+                value
+            );
+        }
+        let input = read_usize(smoth_count.len() - 1)?;
+        let color = smoth_count[input].0;
+        self.move_tip_card(&color.clone())?;
         Ok(())
     }
 
     //_______________________________________________________________________________________
-    fn human_bet_on_camel(&mut self) -> Result<(), &'static str> {
-        clear_screen();
-        println!("{}", self.display_camels());
-        println!("Which camel do you want to bet on? (type the number)");
-        let mut smoth_count = Vec::new();
-        for (i, tip_cards) in self.tip_cards.iter().enumerate() {
-            if tip_cards.len() > 0 {
-                smoth_count.push(i);
-            } else {
-                continue;
-            }
-        }
-        for (i, count) in smoth_count.iter().enumerate() {
-            println!(
-                "{}: {} \t{}",
-                i,
-                Color!(self.tip_cards[*count][0].color.to_string())
-                    .foreground(self.tip_cards[*count][0].color),
-                self.tip_cards[*count][self.tip_cards[*count].len() - 1].value.get(&Place::Top(1)).unwrap()
-            );
-        }
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-        let input: usize = match input.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number (0-displayed max)"),
-        };
-        if input > smoth_count.len()-1 {
-            return Err("Please type a number (0-displayed max)");
-        }
-        self.move_tip_card(
-            self.current_player,
-            self.tip_cards[smoth_count[input]][0].color
-        )
-    }
-
-    //_______________________________________________________________________________________
-    fn human_bet_on_endgame(&mut self) -> Result<(), &'static str> {
+    fn human_bet_on_endgame(&mut self) -> Result<(), String> {
         println!("Do you want to bet on the winer camel or the loser camel? (type the number)");
         let options = vec!["winer", "loser"];
         for (i, option) in options.iter().enumerate() {
             println!("{}: {}", i, option);
         }
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-        let input: usize = match input.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number (0-1)"),
-        };
-        if input > 1 {
-            return Err("Invalid input");
-        }
+        let input = read_usize(options.len() - 1)?;
         clear_screen();
         println!("{}", self.display_camels());
         if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_oweralltipcards.len());}
         else {println!("Currently {} cards bet on the loser camel", self.loser_oweralltipcards.len());}
         println!("Which camel do you want to bet on? (type the number)");
-        let mut endgametipcards = Vec::new();
-        for (i, endgametipcard) in self.common_oweralltipcards.iter().enumerate() {
-            if endgametipcard.owner == self.current_player {
-                endgametipcards.push(i);
-            }
+        for (i, owerall_tip_card) in self.current_player().owerall_tip_cards.iter().enumerate() {
+            println!("{}: {}", i, Color!(owerall_tip_card.color).foreground(&owerall_tip_card.color));
         }
-        for (i, common_i) in endgametipcards.iter().enumerate() {
-            println!("{}: {}", i, Color!(self.common_oweralltipcards[*common_i].color).foreground(self.common_oweralltipcards[*common_i].color));
-        }
-        let mut input2 = String::new();
-        io::stdin().read_line(&mut input2).expect("Failed to read line");
-        let input2: usize = match input2.trim().parse() {
-            Ok(num) => num,
-            Err(_) => return Err("Please type a number (0-displayed max)"), 
-        };
-        if input2 > endgametipcards.len()-1 {
-            return Err("Please type a number (0-displayed max)");
-        }
+        let input2 = read_usize(self.current_player().owerall_tip_cards.len() - 1)?;
+        let color = self.current_player().owerall_tip_cards[input2].color.clone();
         self.end_game_bet(
-            self.current_player, 
-            input == 0, 
-            self.common_oweralltipcards[endgametipcards[input2]].color
+            input == 0,
+            &color
         )?;
         Ok(())
     }
-
-    //_______________________________________________________________________________________
-    pub fn end_game_players_display(&mut self) {
-        self.players.sort_by(|a, b| b.money.cmp(&a.money));
-        for (i, player) in self.players.iter().enumerate() {
-            println!("{}: Player {} has {} money", i, player.name, player.money);
-        }
-        println!("Press enter to exit");
-        io::stdin().read_line(&mut String::new()).expect("Failed to read line");
-    }
-
-    //_______________________________________________________________________________________
-    pub fn game_state_to_input(&self) -> Vec<f64> {
-        let mut inputs = Vec::new();
-        //24 inputs
-        for i in 0..8 {
-            if i > self.players.len()-1 {
-                inputs.push(0 as f64);
-                inputs.push(0 as f64);
-                inputs.push(0 as f64);
-                continue;}
-            inputs.push(self.players[i].placeable_card.faceup as i32 as f64);
-            inputs.push((self.players[i].money/100) as f64);
-            inputs.push(self.players[i].placeable_card.x as f64);
-        }
-        //24 + 10 = 34 inputs
-        let mut camels = self.camels.clone();
-        camels.sort_by(|a, b| a.color.partial_cmp(&b.color).unwrap());
-        for i in 0..camels.len() {
-            inputs.push((self.camels[i].x/self.options.map_len) as f64);
-            inputs.push((self.camels[i].y/self.camels.len() as u8) as f64);
-        }
-        //34+5 = 39 inputs
-        for color in &self.tip_cards {
-            match color.last() {
-                Some(card) => {
-                    inputs.push((card.value.get(&Place::Top(1)).unwrap() / 5) as f64);
-                },
-                None => {
-                    inputs.push(0 as f64);
-                }
-            }
-        }
-        //39+2 = 41 inputs
-        inputs.push((self.winer_oweralltipcards.len()/5) as f64);
-        inputs.push((self.loser_oweralltipcards.len()/5) as f64);
-        inputs
-    }
-
-    //_______________________________________________________________________________________
-    pub fn game_winners_ai(&mut self) -> Vec<u16> {
-        let mut points = Vec::new();
-        for i in 0..self.players.len() {
-            points.push(self.players[i].money);
-        }
-        points
-    }
-
 }
 
 #[cfg(test)]
@@ -647,10 +331,9 @@ mod tests {
     #[test]
     fn test_new_game() {
         let game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.options.map_len, 16);
+        assert_eq!(game.map_len, 16);
         assert_eq!(game.camels.len(), 5);
-        assert_eq!(game.tip_cards.len(), 5);
-        assert_eq!(game.tip_cards[0].len(), 3);
+        assert_eq!(game.tip_cards.len(), 15);
         assert_eq!(game.players.len(), 3);
         assert_eq!(game.players[0].name, "Player0");
         assert_eq!(game.players[0].money, 3);
@@ -660,56 +343,54 @@ mod tests {
         assert_eq!(game.winer_oweralltipcards.len(), 0);
         assert_eq!(game.current_player, 0);
         assert_eq!(game.loser_oweralltipcards.len(), 0);
-        assert_eq!(game.common_oweralltipcards.len(), 15);
-        }
+    }
+
     #[test]
     fn test_get_tip_card() {
         let mut game = CamelCup::a_3_player_new_game();
-        game.move_tip_card(0, Color::White).unwrap();
+        game.move_tip_card_player(0, &Color::White).unwrap();
         assert_eq!(game.players[0].tip_cards.len(), 1);
         assert_eq!(game.players[0].tip_cards[0].color, Color::White);
-        assert_eq!(game.players[0].tip_cards[0].value.get(&Place::Top(1)).unwrap(), &5);
-        assert_eq!(game.tip_cards.len(), 5);
-        assert_eq!(game.tip_cards[0].len(), 2);
-        assert_eq!(game.tip_cards[0].pop().unwrap().value.get(&Place::Top(1)).unwrap(), &3);
-        assert_eq!(game.tip_cards[0].pop().unwrap().value.get(&Place::Top(1)).unwrap(), &2);
+        assert_eq!(game.players[0].tip_cards[0].values.get(&Place::Top(1)).unwrap(), &5);
+        assert_eq!(game.tip_cards.len(), 14);
+        assert_eq!(game.tip_cards.iter().filter(|card| card.color == Color::White).count(), 2);
     }
 
     #[test]
     fn test_get_tip_card_error() {
         let mut game = CamelCup::a_3_player_new_game();
-        game.move_tip_card(0, Color::White).unwrap();
-        game.move_tip_card(0, Color::White).unwrap();
-        game.move_tip_card(0, Color::White).unwrap();
-        assert_eq!(game.move_tip_card(0, Color::White), Err("No more cards of this color left"));
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        assert_eq!(game.move_tip_card_player(0, &Color::White), Err("No more cards of this color left"));
     }
 
     #[test]
     fn test_place_card() {
         let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.place_card(0, 1, true), Ok(()));
-        assert_eq!(game.place_card(0, 1, false), Ok(()));
-        assert_eq!(game.place_card(0, 2, true), Ok(()));
-        assert_eq!(game.place_card(1, 2, false), Err("x is already occupied by some other player"));
-        assert_eq!(game.place_card(1, 1, true), Err("x nearby is already occupied by some other player"));
-        assert_eq!(game.place_card(1, 210, true), Err("x is out of bounds"));
-        assert_eq!(game.place_card(1, 17, false), Err("x is out of bounds"));
-        assert_eq!(game.place_card(2021, 4, true), Err("player_number is out of bounds"));
+        assert_eq!(game.place_card(1, true), Ok(()));
+        assert_eq!(game.place_card(1, false), Ok(()));
+        assert_eq!(game.place_card(2, true), Ok(()));
+        assert_eq!(game.place_card(2, false), Err("x is already occupied by some other player"));
+        assert_eq!(game.place_card(1, true), Err("x nearby is already occupied by some other player"));
+        assert_eq!(game.place_card(210, true), Err("x is out of bounds"));
+        assert_eq!(game.place_card(17, false), Err("x is out of bounds"));
+        assert_eq!(game.place_card(4, true), Err("player_number is out of bounds"));
         game.camels[0].x = 4;
-        assert_eq!(game.place_card(1, 4, true), Err("x is already occupied by some camel(s)"));
-        assert_eq!(game.place_card(0, 2, true), Err("You can't place Your card the same"));
+        assert_eq!(game.place_card(4, true), Err("x is already occupied by some camel(s)"));
+        assert_eq!(game.place_card(2, true), Err("You can't place Your card the same"));
     }
 
     #[test]
     fn test_next_player() {
         let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.current_player(), 0);
+        assert_eq!(game.current_player, 0);
         game.next_player();
-        assert_eq!(game.current_player(), 1);
+        assert_eq!(game.current_player, 1);
         game.next_player();
-        assert_eq!(game.current_player(), 2);
+        assert_eq!(game.current_player, 2);
         game.next_player();
-        assert_eq!(game.current_player(), 0);
+        assert_eq!(game.current_player, 0);
     }
 
     #[test]
@@ -725,13 +406,13 @@ mod tests {
     #[test]
     fn test_end_game_bet(){
         let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.end_game_bet(0, true, Color::White), Ok(()));
-        assert_eq!(game.end_game_bet(110, false, Color::White), Err("player_number is out of bounds"));
-        assert_eq!(game.end_game_bet(0, true, Color::White), Err("You already bet on this color"));
-        assert_eq!(game.end_game_bet(1, true, Color::White), Ok(()));
-        assert_eq!(game.end_game_bet(1, false, Color::White), Err("You already bet on this color"));
-        assert_eq!(game.end_game_bet(2, false, Color::White), Ok(()));
-        assert_eq!(game.common_oweralltipcards.len(), 12);
+        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
+        game.current_player = 0;
+        assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
+        game.current_player = 1;
+        assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
     }
 
 
@@ -774,18 +455,17 @@ mod tests {
     #[test]
     fn test_end_game_evaluate(){
         let mut game = CamelCup::a_n_player_game(6);
-        game.end_game_bet(0, true, Color::White).unwrap();
-        game.end_game_bet(1, false, Color::White).unwrap();
-        game.end_game_bet(2, true, Color::White).unwrap();
+        game.end_game_bet(true, &Color::White).unwrap();
+        game.end_game_bet(false, &Color::White).unwrap();
+        game.end_game_bet(true, &Color::White).unwrap();
         assert_eq!(game.players[0].money, 3);
         assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 3);
         assert_eq!(game.winer_oweralltipcards.len(), 2);
         assert_eq!(game.loser_oweralltipcards.len(), 1);
-        assert_eq!(game.common_oweralltipcards.len(), 27);
-        game.end_game_bet(3, false, Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
-        game.end_game_bet(4, false, Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
-        game.end_game_bet(5, true, Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
+        game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
+        game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
+        game.end_game_bet(true, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
         game.camels[0].x = 17;
         game.camels[1].x = 1;
         game.camels[2].x = 1;
@@ -812,14 +492,11 @@ mod tests {
         assert_eq!(game.move_camel(Color::White, 0), Err("amount must be positive"));
         assert_eq!(game.move_camel(Color::White, 4), Err("amount is too big"));
         assert_eq!(game.move_camel(Color::BrightBlack, 1), Err("No camel with this color"));
-        game.place_card(0, 1, true).unwrap();
-        game.next_player();
+        game.place_card(1, true).unwrap();
         //1
-        game.place_card(1, 3, false).unwrap();
-        game.next_player();
+        game.place_card(3, false).unwrap();
         //2
         game.move_camel(Color::White, 1).unwrap();
-        game.next_player();
         //0
         assert_eq!(game.camels[0].x, 2);
         assert_eq!(game.camels[0].y, 0);
@@ -828,7 +505,6 @@ mod tests {
         assert_eq!(game.players[2].money, 4);
         assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn"));
         game.move_camel(Color::Green, 2).unwrap();
-        game.next_player();
         //1
         game.camel_test_helper(Color::Green, 2, 1, true);
         assert_eq!(game.players[0].money, 5);
@@ -857,16 +533,16 @@ mod tests {
     #[test]
     fn evaluate_end_turn(){
         let mut game = CamelCup::a_n_player_game(5);
-        game.move_tip_card(game.current_player, Color::White).unwrap();
+        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, Color::White).unwrap();
+        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, Color::White).unwrap();
+        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
         game.next_player();
-        assert_eq!(game.move_tip_card(game.current_player, Color::White), Err("No more cards of this color left"));
-        game.move_tip_card(game.current_player, Color::Green).unwrap();
+        assert_eq!(game.move_tip_card_player(game.current_player, &Color::White), Err("No more cards of this color left"));
+        game.move_tip_card_player(game.current_player, &Color::Green).unwrap();
         game.next_player();
-        game.move_tip_card(game.current_player, Color::Blue).unwrap();
+        game.move_tip_card_player(game.current_player, &Color::Blue).unwrap();
         game.next_player();
         game.move_camel(Color::White, 3).unwrap();
         game.next_player();
@@ -882,15 +558,6 @@ mod tests {
         assert_eq!(game.players[2].money, 6);
         assert_eq!(game.players[3].money, 4);
         assert_eq!(game.players[4].money, 2);
-    }
-
-    #[test]
-    fn reset() {
-        let mut game = CamelCup::a_n_player_game(5);
-        game.move_tip_card(game.current_player, Color::White).unwrap();
-        game.reset_turn();
-        game.move_tip_card(game.current_player, Color::White).unwrap();
-        assert_eq!(game.players[0].tip_cards[0].color, Color::White);
     }
 
     #[test]

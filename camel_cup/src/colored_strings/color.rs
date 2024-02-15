@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Eq, Ord)]
 pub enum Color {
     Black,
     Red,

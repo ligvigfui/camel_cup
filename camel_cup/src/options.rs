@@ -7,9 +7,9 @@ pub struct Options {
     pub(crate) map_len: u8,
     pub(crate) player_names: Vec<Option<String>>,
     pub(crate) camel_colors: Vec<Color>,
-    pub(crate) dice_max_number: i8,
+    pub(crate) dice_numbers: Vec<i8>,
     pub(crate) leg_tips: Vec<HashMap<Place, i8>>,
-    pub(crate) owerall_winner_tips: Vec<HashMap<Place, i8>>,
+    pub(crate) owerall_tips_function: HashMap<Place, i8>,
 }
 
 impl Options {
@@ -18,7 +18,7 @@ impl Options {
             map_len: 16,
             player_names,
             camel_colors: vec![Color::White, Color::Blue, Color::Green, Color::Yellow, Color::RGB(Some("Orange".to_string()), 255, 165, 0)],
-            dice_max_number: 3,
+            dice_numbers: vec![1, 2, 3],
             leg_tips: vec![
                 HashMap::from([
                     (Place::Top(1), 5),
@@ -36,7 +36,7 @@ impl Options {
                     (Place::BottomRemaining, -1)
                 ]),
             ],
-            owerall_winner_tips: vec![
+            owerall_tips_function:
                 HashMap::from([
                     (Place::Top(1), 8),
                     (Place::Top(2), 5),
@@ -45,7 +45,6 @@ impl Options {
                     (Place::BottomRemaining, 1),
                     (Place::Wrong, -1)
                 ]),
-            ],
         }
     }
 }

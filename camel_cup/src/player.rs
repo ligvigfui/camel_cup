@@ -9,24 +9,25 @@ pub struct Player {
     pub(crate) owerall_tip_cards: Vec<OwerallTipcard>,
 }
 impl Player {
-    pub fn new(name: Option<String>, number: usize) -> Player {
+    pub fn new(options: &mut Options) -> Player {
+        let name = options.player_names.pop().unwrap();
         let name = match name {
             Some(name) => name,
-            None => format!("Player {}", number),
+            None => format!("Player {}", options.player_names.len()),
         };
         Player {
             name,
             money: 3,
             placeable_card: PlaceCard::new(),
             tip_cards: Vec::new(),
-            owerall_tip_cards: Vec::new(),
+            owerall_tip_cards: OwerallTipcard::new_vec(&options.camel_colors, options.player_names.len()),
         }
     }
 
-    pub fn new_vec(names: Vec<Option<String>>) -> Vec<Player> {
-        let mut result = Vec::with_capacity(names.len());
-        for (i, &name) in names.iter().enumerate() {
-            result.push(Player::new(name, i));
+    pub fn new_vec(options: &mut Options) -> Vec<Player> {
+        let mut result = Vec::with_capacity(options.player_names.len());
+        while let Some(_) = options.player_names.last() {
+            result.push(Player::new(options));
         }
         result
     }
@@ -37,5 +38,32 @@ impl Player {
             return;
         }
         self.money = (self.money as i32 + (amount as i32)) as u16
+    }
+
+    pub fn evaluate_tip_cards(&mut self, camels: &Vec<Camel>) -> Vec<TipCard> {
+        let cards = Vec::new();
+        while let Some(card) = self.tip_cards.pop() {
+            let amount = card.evaluate(camels);
+            self.modify_money(amount)
+        }
+        cards
+    }
+
+    pub fn number_out_of_bounds(game: &CamelCup, player_number: usize) -> Result<(), &'static str> {
+        match player_number >= game.players.len() {
+            true => Err("player_number is out of bounds"),
+            false => Ok(()),
+        }
+    }
+}
+
+impl CamelCup {
+    pub fn end_game_players_display(&mut self) {
+        self.players.sort_by(|a, b| b.money.cmp(&a.money));
+        for (i, player) in self.players.iter().enumerate() {
+            println!("{}: Player {} has {} money", i, player.name, player.money);
+        }
+        println!("Press enter to exit");
+        io::stdin().read_line(&mut String::new()).expect("Failed to read line");
     }
 }

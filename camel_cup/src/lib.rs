@@ -21,7 +21,21 @@ pub use crate::{
 };
 
 pub use std::collections::HashMap;
+use std::io;
 
 pub fn clear_screen() {
     print!("\x1B[2J");
+}
+pub fn read_usize(max: usize) -> Result<usize, String> {
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).expect("Failed to read line");
+    let error = format!("Please type a number between 0 and {max}");
+    let input_num: usize = match input.trim().parse() {
+        Ok(num) => num,
+        Err(_) => return Err(error),
+    };
+    match input_num <= max {
+        true => Ok(input_num),
+        false => Err(error),
+    }
 }

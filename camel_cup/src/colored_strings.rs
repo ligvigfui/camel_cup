@@ -33,12 +33,12 @@ impl ColoredString {
             text,
         }
     }
-    pub fn foreground(mut self, color: Color) -> ColoredString {
-        self.format.foreground = Some(color);
+    pub fn foreground(mut self, color: &Color) -> ColoredString {
+        self.format.foreground = Some(color.clone());
         self
     }
-    pub fn background(mut self, color: Color) -> ColoredString {
-        self.format.background = Some(color);
+    pub fn background(mut self, color: &Color) -> ColoredString {
+        self.format.background = Some(color.clone());
         self
     }
     pub fn bold(mut self, bold: bool) -> ColoredString {

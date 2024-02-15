@@ -1,28 +1,28 @@
 use std::{error::Error, io};
 
-use camel_cup::{clear_screen, CamelCup, Player};
+use camel_cup::{clear_screen, read_usize, CamelCup, Options};
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Welcome to the Camel Up game!");
     //ask the user how many players are playing?
-    let mut player_number = String::new();
+    let player_number;
     loop {
         println!("How many players are playing? (2-8)");
-        player_number.clear();
-        io::stdin().read_line(&mut player_number).expect("Failed to read line");
-        let player_number: i32 = match player_number.trim().parse() {
-            Ok(num) => num,
-            Err(_) => {
-                println!("Please type a number");
-                continue
+        match read_usize(8) {
+            Ok(num) => {
+                if num < 2 {
+                    println!("This is a multiplayer game. Please type at least 2");
+                    continue;
+                }
+                player_number = num;
+                break;
             },
+            Err(e) => {
+                println!("{}", e);
+                continue;
+            }
         };
-        if player_number > 1 && player_number < 9 {
-            break;
-        }
-        println!("Number is outside of range");
     }
-    let player_number = player_number.trim().parse().unwrap();
     println!("Would you like to add a name to the players? (y/n)");
     let mut add_names = String::new();
     io::stdin().read_line(&mut add_names).expect("Failed to read line");
@@ -35,21 +35,22 @@ fn main() -> Result<(), Box<dyn Error>> {
             let mut name = String::new();
             io::stdin().read_line(&mut name).expect("Failed to read line");
             name = name.trim().to_string();
-            names.push(Player::new(Some(name), i));
+            names.push(Some(name));
         }
     } else {
         for i in 0..player_number {
             println!("debug: players are setting up without names {i}");
-            names.push(Player::new(None, i));
+            names.push(None);
         }
     }
     clear_screen();
-    let mut game = CamelCup::new(names);
+    let mut options = Options::new(names);
+    let mut game = CamelCup::new(&mut options)?;
     let mut running = true;
     while running {
         loop {
             game.display();
-            match game.turn() {
+            match game.human_turn() {
                 Ok(_) => {
                     clear_screen();
                     break;
@@ -63,7 +64,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         if game.end_turn_check() {
             game.evaluate_end_turn();
-            game.reset_turn();
         }
         if game.end_game_check() {
             game.evaluate_end_turn();
