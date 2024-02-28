@@ -1,7 +1,7 @@
 pub mod camel_cup;
 pub mod camel;
 pub mod colored_strings;
-pub mod owerall_tip_card;
+pub mod overall_tip_card;
 pub mod options;
 pub mod place_card;
 pub mod place;
@@ -12,7 +12,7 @@ pub use crate::{
     camel_cup::*,
     camel::*,
     colored_strings::*,
-    owerall_tip_card::*,
+    overall_tip_card::*,
     options::*,
     place_card::*,
     place::*,

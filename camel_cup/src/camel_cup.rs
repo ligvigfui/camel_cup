@@ -7,12 +7,12 @@ pub struct CamelCup {
     pub current_player: usize,
     pub map_len: u8,
     pub dice_numbers: Vec<i8>,
-    pub owerall_tips_function: HashMap<Place, i8>,
+    pub overall_tips_function: HashMap<Place, i8>,
     pub camels: Vec<Camel>,
     pub tip_cards: Vec<TipCard>,
     pub players: Vec<Player>,
-    pub winer_oweralltipcards: Vec<OwerallTipcard>,
-    pub loser_oweralltipcards: Vec<OwerallTipcard>,
+    pub winer_overalltipcards: Vec<overallTipcard>,
+    pub loser_overalltipcards: Vec<overallTipcard>,
 }
 
 impl CamelCup {
@@ -24,9 +24,9 @@ impl CamelCup {
             tip_cards: TipCard::new_vec(&options)?,
             players: Player::new_vec(options),
             camels: Camel::new_vec(&mut take(&mut options.camel_colors)),
-            winer_oweralltipcards: Vec::new(),
-            loser_oweralltipcards: Vec::new(),
-            owerall_tips_function: take(&mut options.owerall_tips_function),
+            winer_overalltipcards: Vec::new(),
+            loser_overalltipcards: Vec::new(),
+            overall_tips_function: take(&mut options.overall_tips_function),
         })
     }
     pub fn a_3_player_new_game() -> CamelCup {
@@ -78,7 +78,7 @@ impl CamelCup {
         if human {println!("{:?}", self);}
         let mut winer_reward = vec![2, 3, 5, 8];
         let mut loser_reward = winer_reward.clone();
-        for endgametipcard in self.winer_oweralltipcards.iter() {
+        for endgametipcard in self.winer_overalltipcards.iter() {
             if endgametipcard.color == self.camels[0].color {
                 if human {println!("poping value from winer_reward {}", winer_reward[winer_reward.len()-1]);}
                 self.players[endgametipcard.owner].money += match winer_reward.pop() {
@@ -90,7 +90,7 @@ impl CamelCup {
                 self.players[endgametipcard.owner].money -= 1;
             }
         }
-        for endgametipcard in self.loser_oweralltipcards.iter() {
+        for endgametipcard in self.loser_overalltipcards.iter() {
             if endgametipcard.color == self.camels[self.camels.len()-1].color {
                 if human {println!("poping value from loser_reward {}", loser_reward[loser_reward.len()-1]);}
                 self.players[endgametipcard.owner].money += match loser_reward.pop() {
@@ -139,8 +139,8 @@ impl CamelCup {
         //display tip cards
         print!("{}", self.display_tip_cards());
         //display endgame info
-        println!("{} cards bet on the winer camel", Color!(self.winer_oweralltipcards.len()).bold(true));
-        println!("{} cards bet on the losing camel", Color!(self.loser_oweralltipcards.len()).bold(true));
+        println!("{} cards bet on the winer camel", Color!(self.winer_overalltipcards.len()).bold(true));
+        println!("{} cards bet on the losing camel", Color!(self.loser_overalltipcards.len()).bold(true));
     }
 
     //_______________________________________________________________________________________
@@ -314,14 +314,14 @@ impl CamelCup {
         let input = read_usize(options.len() - 1)?;
         clear_screen();
         println!("{}", self.display_camels());
-        if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_oweralltipcards.len());}
-        else {println!("Currently {} cards bet on the loser camel", self.loser_oweralltipcards.len());}
+        if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_overalltipcards.len());}
+        else {println!("Currently {} cards bet on the loser camel", self.loser_overalltipcards.len());}
         println!("Which camel do you want to bet on? (type the number)");
-        for (i, owerall_tip_card) in self.current_player().owerall_tip_cards.iter().enumerate() {
-            println!("{}: {}", i, Color!(owerall_tip_card.color).foreground(&owerall_tip_card.color));
+        for (i, overall_tip_card) in self.current_player().overall_tip_cards.iter().enumerate() {
+            println!("{}: {}", i, Color!(overall_tip_card.color).foreground(&overall_tip_card.color));
         }
-        let input2 = read_usize(self.current_player().owerall_tip_cards.len() - 1)?;
-        let color = self.current_player().owerall_tip_cards[input2].color.clone();
+        let input2 = read_usize(self.current_player().overall_tip_cards.len() - 1)?;
+        let color = self.current_player().overall_tip_cards[input2].color.clone();
         self.end_game_bet(
             input == 0,
             &color
@@ -346,9 +346,9 @@ mod tests {
         assert_eq!(game.players[0].placeable_card.x, 0);
         assert_eq!(game.players[0].placeable_card.faceup, false);
         assert_eq!(game.players[0].tip_cards.len(), 0);
-        assert_eq!(game.winer_oweralltipcards.len(), 0);
+        assert_eq!(game.winer_overalltipcards.len(), 0);
         assert_eq!(game.current_player, 0);
-        assert_eq!(game.loser_oweralltipcards.len(), 0);
+        assert_eq!(game.loser_overalltipcards.len(), 0);
     }
 
     #[test]
@@ -418,8 +418,8 @@ mod tests {
         assert_eq!(game.players[0].money, 3);
         assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 3);
-        assert_eq!(game.winer_oweralltipcards.len(), 2);
-        assert_eq!(game.loser_oweralltipcards.len(), 1);
+        assert_eq!(game.winer_overalltipcards.len(), 2);
+        assert_eq!(game.loser_overalltipcards.len(), 1);
         game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
         game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
         game.end_game_bet(true, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();

@@ -9,7 +9,7 @@ pub struct Options {
     pub(crate) camel_colors: Vec<Color>,
     pub(crate) dice_numbers: Vec<i8>,
     pub(crate) leg_tips: Vec<HashMap<Place, i8>>,
-    pub(crate) owerall_tips_function: HashMap<Place, i8>,
+    pub(crate) overall_tips_function: HashMap<Place, i8>,
 }
 
 impl Options {
@@ -36,7 +36,7 @@ impl Options {
                     (Place::BottomRemaining, -1)
                 ]),
             ],
-            owerall_tips_function:
+            overall_tips_function:
                 HashMap::from([
                     (Place::Top(1), 8),
                     (Place::Top(2), 5),

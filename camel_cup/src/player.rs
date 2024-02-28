@@ -6,7 +6,7 @@ pub struct Player {
     pub(crate) money: u16,
     pub(crate) placeable_card: PlaceCard,
     pub(crate) tip_cards: Vec<TipCard>,
-    pub(crate) owerall_tip_cards: Vec<OwerallTipcard>,
+    pub(crate) overall_tip_cards: Vec<overallTipcard>,
 }
 impl Player {
     pub fn new(options: &mut Options) -> Player {
@@ -20,7 +20,7 @@ impl Player {
             money: 3,
             placeable_card: PlaceCard::new(),
             tip_cards: Vec::new(),
-            owerall_tip_cards: OwerallTipcard::new_vec(&options.camel_colors, options.player_names.len()),
+            overall_tip_cards: overallTipcard::new_vec(&options.camel_colors, options.player_names.len()),
         }
     }
 
