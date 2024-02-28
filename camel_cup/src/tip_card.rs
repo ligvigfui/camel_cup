@@ -42,24 +42,24 @@ impl TipCard {
     pub fn evaluate(&self, camels: &[Camel]) -> i8 {
         let position = Camel::place(&self.color, camels);
         let mut result = 0;
-        for (place, value) in &self.values {
+        for (place, &value) in &self.values {
             match place {
                 Place::Top(n) => {
                     if position == *n as usize {
-                        result += value;
+                        return value;
                     }
                 }
                 Place::Bottom(n) => {
                     if position == camels.len() - *n as usize {
-                        result += value;
+                        return value;
                     }
                 }
                 Place::TopRemaining |
                 Place::MiddleRemaining |
                 Place::BottomRemaining => {
-                    result += value;
+                    result = value;
                 }
-                Place::Wrong => todo!()
+                Place::Wrong => return 0,
             }
         }
         result
@@ -102,7 +102,27 @@ impl CamelCup {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::*;    
+
+    #[test]
+    fn test_get_tip_card() {
+        let mut game = CamelCup::a_3_player_new_game();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        assert_eq!(game.players[0].tip_cards.len(), 1);
+        assert_eq!(game.players[0].tip_cards[0].color, Color::White);
+        assert_eq!(game.players[0].tip_cards[0].values.get(&Place::Top(1)).unwrap(), &5);
+        assert_eq!(game.tip_cards.len(), 14);
+        assert_eq!(game.tip_cards.iter().filter(|card| card.color == Color::White).count(), 2);
+    }
+
+    #[test]
+    fn test_get_tip_card_error() {
+        let mut game = CamelCup::a_3_player_new_game();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        game.move_tip_card_player(0, &Color::White).unwrap();
+        assert_eq!(game.move_tip_card_player(0, &Color::White), Err("No more cards of this color left"));
+    }
 
     #[test]
     fn test_evaluation() {

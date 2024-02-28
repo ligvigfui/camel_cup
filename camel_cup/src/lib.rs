@@ -39,3 +39,27 @@ pub fn read_usize(max: usize) -> Result<usize, String> {
         false => Err(error),
     }
 }
+pub fn add(number1: u8, number2: i8) -> u8 {
+    match number1 as i16 > -number2 as i16 {
+        true  => if number1 as i16 + number2 as i16 > u8::MAX as i16 {
+            u8::MAX
+        } else {
+            ( number1 as i16 + number2 as i16 ) as u8
+        },
+        false => u8::MIN,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_test() {
+        assert_eq!(add(0, 2), 2);
+        assert_eq!(add(2, -1), 1);
+        assert_eq!(add(2, -2), 0);
+        assert_eq!(add(2, -3), 0);
+        assert_eq!(add(200, 100), u8::MAX);
+    }
+}

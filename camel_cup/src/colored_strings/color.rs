@@ -79,7 +79,33 @@ impl Display for Color {
             Color::U8(Some(name), _) => write!(f, "{}", name),
             Color::RGB(None, r, g, b) => write!(f, "RGB({},{},{})", r, g, b),
             Color::U8(None, n) => write!(f, "U8({})", n),
-            _ => write!(f, "{}", self.to_string()),
+            _ => write!(f, "{:?}", self),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn to_foreground() {
+        let color = Color::Red;
+        assert_eq!(color.to_foreground(), "\x1B[31m".to_string());
+    }
+
+    #[test]
+    fn to_background() {
+        let color = Color::Red;
+        assert_eq!(color.to_background(), "\x1B[41m".to_string());
+    }
+
+    #[test]
+    fn to_string() {
+        assert_eq!(Color::Red.to_string(), "Red".to_string());
+        assert_eq!(Color::RGB(Some("White".to_string()), 255, 255, 255).to_string(), "White".to_string());
+        assert_eq!(Color::RGB(None, 255, 255, 255).to_string(), "RGB(255,255,255)".to_string());
+        assert_eq!(Color::U8(Some("White".to_string()), 255).to_string(), "White".to_string());
+        assert_eq!(Color::U8(None, 255).to_string(), "U8(255)".to_string());
     }
 }

@@ -27,7 +27,7 @@ impl Player {
     pub fn new_vec(options: &mut Options) -> Vec<Player> {
         let mut result = Vec::with_capacity(options.player_names.len());
         while let Some(_) = options.player_names.last() {
-            result.push(Player::new(options));
+            result.insert(0, Player::new(options));
         }
         result
     }

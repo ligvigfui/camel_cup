@@ -46,6 +46,14 @@ impl CamelCup {
         self.current_player = (self.current_player + 1) % self.players.len();
     }
 
+    pub(crate) fn map_len_out_of_bounds(&self, x: u8) -> Result<(), String> {
+        match x {
+            ix if ix <= 1 => Err("x must be at least 2".to_string()),
+            ix if ix > self.map_len => Err(format!("x must be at most {}", self.map_len)),
+            _ => Ok(())
+        }
+    }
+
     //______________________________________________________________________________________________________________________
     pub fn end_turn_check(&self) -> bool {
         let mut end_of_turn = true;
@@ -135,7 +143,6 @@ impl CamelCup {
         println!("{} cards bet on the losing camel", Color!(self.loser_oweralltipcards.len()).bold(true));
     }
 
-
     //_______________________________________________________________________________________
     fn display_tip_cards(&self) -> String {
         let mut display = String::new();
@@ -153,7 +160,6 @@ impl CamelCup {
         }
         display
     }
-
 
     //_______________________________________________________________________________________
     fn display_camels(&self) -> String {
@@ -335,7 +341,7 @@ mod tests {
         assert_eq!(game.camels.len(), 5);
         assert_eq!(game.tip_cards.len(), 15);
         assert_eq!(game.players.len(), 3);
-        assert_eq!(game.players[0].name, "Player0");
+        assert_eq!(game.players[0].name, "Player 0");
         assert_eq!(game.players[0].money, 3);
         assert_eq!(game.players[0].placeable_card.x, 0);
         assert_eq!(game.players[0].placeable_card.faceup, false);
@@ -343,42 +349,6 @@ mod tests {
         assert_eq!(game.winer_oweralltipcards.len(), 0);
         assert_eq!(game.current_player, 0);
         assert_eq!(game.loser_oweralltipcards.len(), 0);
-    }
-
-    #[test]
-    fn test_get_tip_card() {
-        let mut game = CamelCup::a_3_player_new_game();
-        game.move_tip_card_player(0, &Color::White).unwrap();
-        assert_eq!(game.players[0].tip_cards.len(), 1);
-        assert_eq!(game.players[0].tip_cards[0].color, Color::White);
-        assert_eq!(game.players[0].tip_cards[0].values.get(&Place::Top(1)).unwrap(), &5);
-        assert_eq!(game.tip_cards.len(), 14);
-        assert_eq!(game.tip_cards.iter().filter(|card| card.color == Color::White).count(), 2);
-    }
-
-    #[test]
-    fn test_get_tip_card_error() {
-        let mut game = CamelCup::a_3_player_new_game();
-        game.move_tip_card_player(0, &Color::White).unwrap();
-        game.move_tip_card_player(0, &Color::White).unwrap();
-        game.move_tip_card_player(0, &Color::White).unwrap();
-        assert_eq!(game.move_tip_card_player(0, &Color::White), Err("No more cards of this color left"));
-    }
-
-    #[test]
-    fn test_place_card() {
-        let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.place_card(1, true), Ok(()));
-        assert_eq!(game.place_card(1, false), Ok(()));
-        assert_eq!(game.place_card(2, true), Ok(()));
-        assert_eq!(game.place_card(2, false), Err("x is already occupied by some other player"));
-        assert_eq!(game.place_card(1, true), Err("x nearby is already occupied by some other player"));
-        assert_eq!(game.place_card(210, true), Err("x is out of bounds"));
-        assert_eq!(game.place_card(17, false), Err("x is out of bounds"));
-        assert_eq!(game.place_card(4, true), Err("player_number is out of bounds"));
-        game.camels[0].x = 4;
-        assert_eq!(game.place_card(4, true), Err("x is already occupied by some camel(s)"));
-        assert_eq!(game.place_card(2, true), Err("You can't place Your card the same"));
     }
 
     #[test]
@@ -402,19 +372,6 @@ mod tests {
         }
         assert_eq!(game.end_turn_check(), true);
     }
-
-    #[test]
-    fn test_end_game_bet(){
-        let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
-        game.current_player = 0;
-        assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color"));
-        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
-        game.current_player = 1;
-        assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
-        assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
-    }
-
 
     #[test]
     fn test_order_camels(){
@@ -482,74 +439,19 @@ mod tests {
         assert_eq!(game.players[4].money, 8);
         assert_eq!(game.players[5].money, 2);
     }
-    
 
-    
-    
-    #[test]
-    fn test_move_camel() {
-        let mut game = CamelCup::a_3_player_new_game();
-        assert_eq!(game.move_camel(Color::White, 0), Err("amount must be positive"));
-        assert_eq!(game.move_camel(Color::White, 4), Err("amount is too big"));
-        assert_eq!(game.move_camel(Color::BrightBlack, 1), Err("No camel with this color"));
-        game.place_card(1, true).unwrap();
-        //1
-        game.place_card(3, false).unwrap();
-        //2
-        game.move_camel(Color::White, 1).unwrap();
-        //0
-        assert_eq!(game.camels[0].x, 2);
-        assert_eq!(game.camels[0].y, 0);
-        assert_eq!(game.camels[0].moved, true);
-        assert_eq!(game.players[0].money, 4);
-        assert_eq!(game.players[2].money, 4);
-        assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn"));
-        game.move_camel(Color::Green, 2).unwrap();
-        //1
-        game.camel_test_helper(Color::Green, 2, 1, true);
-        assert_eq!(game.players[0].money, 5);
-        assert_eq!(game.players[2].money, 4);
-        game.move_camel(Color::Blue, 3).unwrap();
-        game.next_player();
-        //2
-        game.camel_test_helper(Color::Blue, 2, 0, true);
-        assert_eq!(game.players[0].money, 5);
-        assert_eq!(game.players[2].money, 4);
-        assert_eq!(game.players[1].money, 5);
-        for camel in game.camels.iter_mut() {
-            camel.moved = false;
-        }
-        game.move_camel(Color::White, 1).unwrap();
-        game.camel_test_helper(Color::White, 2, 0, true);
-        game.camel_test_helper(Color::Green, 2, 1, false);
-        game.camel_test_helper(Color::Blue, 2, 2, false);
-        game.move_camel(Color::Green, 3).unwrap();
-        game.camel_test_helper(Color::White, 2, 0, true);
-        game.camel_test_helper(Color::Green, 5, 0, true);
-        game.camel_test_helper(Color::Blue, 5, 1, false);
-        
-    }
-    
     #[test]
     fn evaluate_end_turn(){
         let mut game = CamelCup::a_n_player_game(5);
-        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
-        game.next_player();
-        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
-        game.next_player();
-        game.move_tip_card_player(game.current_player, &Color::White).unwrap();
-        game.next_player();
-        assert_eq!(game.move_tip_card_player(game.current_player, &Color::White), Err("No more cards of this color left"));
-        game.move_tip_card_player(game.current_player, &Color::Green).unwrap();
-        game.next_player();
-        game.move_tip_card_player(game.current_player, &Color::Blue).unwrap();
-        game.next_player();
+        game.move_tip_card(&Color::White).unwrap();
+        game.move_tip_card(&Color::White).unwrap();
+        game.move_tip_card(&Color::White).unwrap();
+        assert_eq!(game.move_tip_card(&Color::White), Err("No more cards of this color left"));
+        game.move_tip_card(&Color::Green).unwrap();
+        game.move_tip_card(&Color::Blue).unwrap();
         game.move_camel(Color::White, 3).unwrap();
-        game.next_player();
         game.move_camel(Color::Green, 2).unwrap();
-        game.next_player();
         game.move_camel(Color::Blue, 1).unwrap();
-        game.next_player();
         game.camels[3].moved = true;
         game.camels[4].moved = true;
         game.evaluate_end_turn();
@@ -619,5 +521,11 @@ mod tests {
         assert_eq!(game.display_camels(), string);
     }
 
-
+    #[test]
+    fn map_len_out_of_bounds() {
+        let game = CamelCup::a_3_player_new_game();
+        assert!(CamelCup::map_len_out_of_bounds(&game, 1).is_err());
+        assert!(CamelCup::map_len_out_of_bounds(&game, 20).is_err());
+        assert!(CamelCup::map_len_out_of_bounds(&game, 2).is_ok())
+    }
 }

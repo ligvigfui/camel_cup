@@ -85,3 +85,22 @@ impl Display for ColoredString {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display() {
+        let colored = ColoredString::new("Hello").foreground(&Color::Red);
+        assert_eq!(format!("{}", colored), "\x1B[31mHello\x1B[0m");
+    }
+
+    #[test]
+    fn push_colored() {
+        let mut string = String::new();
+        let colored = Color!("Hello").foreground(&Color::Red);
+        string.push_colored(colored);
+        assert_eq!(string, "\x1B[31mHello\x1B[0m");
+    }
+}

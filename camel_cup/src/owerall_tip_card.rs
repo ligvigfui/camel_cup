@@ -16,10 +16,8 @@ impl OwerallTipcard {
 
     pub fn new_vec(colors: &Vec<Color>, player_number: usize) -> Vec<OwerallTipcard> {
         let mut endgame_tipcards = Vec::new();
-        for i in 0..player_number {
-            for color in colors {
-                endgame_tipcards.push(Self::new(color.clone(), i));
-            }
+        for color in colors {
+            endgame_tipcards.push(Self::new(color.clone(), player_number));
         }
         endgame_tipcards
     }
@@ -47,5 +45,35 @@ impl CamelCup {
         self.end_game_bet_player(self.current_player, winer, color)?;
         self.next_player();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_vec() {
+        let game = CamelCup::a_3_player_new_game();
+        assert!(game.players[0].owerall_tip_cards.len() == 5);
+        assert!(game.players[0].owerall_tip_cards[0].owner == 0);
+        assert!(game.players[0].owerall_tip_cards[1].owner == 0);
+        assert!(game.players[0].owerall_tip_cards[2].owner == 0);
+        assert!(game.players[0].owerall_tip_cards[3].owner == 0);
+        assert!(game.players[0].owerall_tip_cards[4].owner == 0);
+        assert!(game.players[1].owerall_tip_cards.len() == 5);
+        assert!(game.players[2].owerall_tip_cards.len() == 5);
+    }
+
+    #[test]
+    fn owerall_tip(){
+        let mut game = CamelCup::a_3_player_new_game();
+        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
+        game.current_player = 0;
+        assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
+        game.current_player = 1;
+        assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
     }
 }
