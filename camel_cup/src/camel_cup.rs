@@ -156,7 +156,7 @@ impl CamelCup {
         }
         for (&color, card_values) in cards.iter_mut() {
             card_values.sort_by(|a, b| b.cmp(a));
-            display.push_colored(Color!(format!("{}: {}\t", color.to_string(), card_values.join("\t"))).foreground(color));
+            display.push_colored(Color!("{: >8}: {}\n", color.to_string(), card_values.join("\t")).foreground(color));
         }
         display
     }
@@ -193,13 +193,9 @@ impl CamelCup {
             display.push_str("\n");
         }
         for i in 0..self.map_len+1 {
-            if i > 9 {
-                display.push_str(&format!("_{}", i));
-            } else {
-                display.push_str(&format!("_{}_", i));
-            }
+            display.push_str(&format!("{: ^3}", i));
         }
-        display.push_str("__winner's_on_top__\n   ");
+        display.push_str("  winner's on top\n");
         let mut player_found = false;
         for i in 1..self.map_len+1 {
             for (j, player) in self.players.iter().enumerate() {
@@ -294,7 +290,7 @@ impl CamelCup {
             println!(
                 "{}: {} \t{}",
                 i,
-                Color!(color.to_string()).foreground(&color),
+                Color!(color).foreground(&color),
                 value
             );
         }

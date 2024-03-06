@@ -71,9 +71,11 @@ mod tests {
         assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
         game.current_player = 0;
         assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color"));
+        game.current_player = 1;
         assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
         game.current_player = 1;
         assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
+        game.current_player = 3;
         assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
     }
 }

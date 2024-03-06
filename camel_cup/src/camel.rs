@@ -158,8 +158,9 @@ impl CamelCup {
         panic!("No camel with this color");
     }
 
-    pub(crate) fn camel_test_helper(&self, color: Color, assert_x: u8, assert_y: u8, assert_moved: bool) {
-        let camel = self.camels.iter().find(|camel| camel.color == color).unwrap();
+    pub(crate) fn camel_test_helper(&self, camel_index: usize, color: Color, assert_x: u8, assert_y: u8, assert_moved: bool) {
+        let camel = &self.camels[camel_index];
+        assert_eq!(camel.color, color);
         assert_eq!(assert_x, camel.x);
         assert_eq!(assert_y, camel.y);
         assert_eq!(assert_moved, camel.moved);
@@ -191,30 +192,29 @@ mod tests {
         //2
         game.move_camel(Color::White, 2).unwrap();
         //0
-        assert_eq!(game.camels[0].color, Color::White);
-        assert_eq!(game.camels[0].x, 3);
-        assert_eq!(game.camels[0].y, 0);
-        assert_eq!(game.camels[0].moved, true);
+        game.camel_test_helper(0, Color::White, 3, 0, true);
         assert_eq!(game.players[0].money, 4);
+        assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 4);
         assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn"));
         game.move_camel(Color::Green, 3).unwrap();
         //1
-        game.camel_test_helper(Color::Green, 3, 1, true);
+        game.camel_test_helper(0, Color::Green, 3, 1, true);
         assert_eq!(game.players[0].money, 5);
+        assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 4);
         game.move_camel(Color::Blue, 1).unwrap();
         //2
-        game.camel_test_helper(Color::Blue, 1, 0, true);
-        assert_eq!(game.players[0].money, 5);
+        game.camel_test_helper(2, Color::Blue, 1, 0, true);
+        assert_eq!(game.players[0].money, 6);
         assert_eq!(game.players[2].money, 4);
-        assert_eq!(game.players[1].money, 5);
+        assert_eq!(game.players[1].money, 4);
         for camel in game.camels.iter_mut() {
             camel.moved = false;
         }
         game.move_camel(Color::White, 1).unwrap();
-        game.camel_test_helper(Color::White, 3, 0, true);
-        game.camel_test_helper(Color::Green, 3, 1, false);
-        game.camel_test_helper(Color::Blue, 1, 0, false);
+        game.camel_test_helper(1, Color::White, 3, 0, true);
+        game.camel_test_helper(0, Color::Green, 3, 1, false);
+        game.camel_test_helper(2, Color::Blue, 1, 0, false);
     }
 }

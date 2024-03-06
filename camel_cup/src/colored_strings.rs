@@ -18,6 +18,10 @@ macro_rules! Color {
     ($input:expr) => {
         ColoredString::new_string(format!("{}", $input))
     };
+    ($($arg:tt)*) => {{
+        let res = std::fmt::format(format_args!($($arg)*));
+        ColoredString::new_string(res)
+    }};
 }
 
 impl ColoredString {
@@ -102,5 +106,17 @@ mod tests {
         let colored = Color!("Hello").foreground(&Color::Red);
         string.push_colored(colored);
         assert_eq!(string, "\x1B[31mHello\x1B[0m");
+    }
+
+    #[test]
+    fn expression() {
+        let colored = Color!(2*4).foreground(&Color::Red);
+        assert_eq!(format!("{}", colored), "\x1B[31m8\x1B[0m");
+    }
+
+    #[test]
+    fn complex_colored() {
+        let colored = Color!("Hello {}", 1).foreground(&Color::Red);
+        assert_eq!(format!("{}", colored), "\x1B[31mHello 1\x1B[0m");
     }
 }
