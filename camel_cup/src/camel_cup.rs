@@ -11,8 +11,8 @@ pub struct CamelCup {
     pub camels: Vec<Camel>,
     pub tip_cards: Vec<TipCard>,
     pub players: Vec<Player>,
-    pub winer_overalltipcards: Vec<overallTipcard>,
-    pub loser_overalltipcards: Vec<overallTipcard>,
+    pub winer_overalltipcards: Vec<OverallTipcard>,
+    pub loser_overalltipcards: Vec<OverallTipcard>,
 }
 
 impl CamelCup {
@@ -123,7 +123,7 @@ impl CamelCup {
         //display camels
         //display map
         //display player cards
-        println!("{}", self.display_camels());
+        println!("{}", self.display_map());
         //display tip cards
         //display player money
         for player in self.players.iter() {
@@ -162,7 +162,7 @@ impl CamelCup {
     }
 
     //_______________________________________________________________________________________
-    fn display_camels(&self) -> String {
+    fn display_map(&self) -> String {
         let mut display = String::new();
         for i in (0..=self.camels.len()-1).rev() {
             for (j, camel) in self.camels.iter().enumerate() {
@@ -271,7 +271,7 @@ impl CamelCup {
     //_______________________________________________________________________________________
     fn human_bet_on_camel(&mut self) -> Result<(), String> {
         clear_screen();
-        println!("{}", self.display_camels());
+        println!("{}", self.display_map());
         println!("Which camel do you want to bet on? (type the number)");
         let mut color_value = HashMap::new();
         for tip_card in self.tip_cards.iter() {
@@ -309,7 +309,7 @@ impl CamelCup {
         }
         let input = read_usize(options.len() - 1)?;
         clear_screen();
-        println!("{}", self.display_camels());
+        println!("{}", self.display_map());
         if input == 0 {println!("Currently {} cards bet on the winner camel", self.winer_overalltipcards.len());}
         else {println!("Currently {} cards bet on the loser camel", self.loser_overalltipcards.len());}
         println!("Which camel do you want to bet on? (type the number)");
@@ -459,62 +459,62 @@ mod tests {
     }
 
     #[test]
-    fn display_camels() {
+    fn display_map() {
         let mut game = CamelCup::a_3_player_new_game();
         let string = 
-        "\u{1b}[38;2;255;165;0mora\u{1b}[0m                                                \n".to_owned() +
-        "\u{1b}[33myel\u{1b}[0m                                                \n" +
-        "\u{1b}[32mgre\u{1b}[0m                                                \n" +
-        "\u{1b}[34mblu\u{1b}[0m                                                \n" +
-        "\u{1b}[1mwhi\u{1b}[0m                                                \n" +
-        "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
-        "                                                   \n";
-        assert_eq!(game.display_camels(), string);
+        "\u{1b}[38;2;255;165;0mOra\u{1b}[0m                                                \n".to_owned() +
+        "\u{1b}[33mYel\u{1b}[0m                                                \n" +
+        "\u{1b}[32mGre\u{1b}[0m                                                \n" +
+        "\u{1b}[34mBlu\u{1b}[0m                                                \n" +
+        "\u{1b}[37mWhi\u{1b}[0m                                                \n" +
+        " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
+        "                                                \n";
+        assert_eq!(game.display_map(), string);
         game.move_camel(Color::White, 1).unwrap();
         println!("{:?}", game.camels);
-        println!("{}", game.display_camels());
+        println!("{}", game.display_map());
         let string = 
-        "\u{1b}[38;2;255;165;0mora\u{1b}[0m                                                \n".to_owned() +
-        "\u{1b}[33myel\u{1b}[0m                                                \n" +
-        "\u{1b}[32mgre\u{1b}[0m                                                \n" +
-        "\u{1b}[34mblu\u{1b}[0m                                                \n" +
-        "   \u{1b}[1mwhi\u{1b}[0m                                             \n" +
-        "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
-        "                                                   \n";
-        assert_eq!(game.display_camels(), string);
+        "\u{1b}[38;2;255;165;0mOra\u{1b}[0m                                                \n".to_owned() +
+        "\u{1b}[33mYel\u{1b}[0m                                                \n" +
+        "\u{1b}[32mGre\u{1b}[0m                                                \n" +
+        "\u{1b}[34mBlu\u{1b}[0m                                                \n" +
+        "   \u{1b}[37mWhi\u{1b}[0m                                             \n" +
+        " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
+        "                                                \n";
+        assert_eq!(game.display_map(), string);
         game.move_camel(Color::Blue, 1).unwrap();
         println!("{:?}", game.camels);
-        println!("{}", game.display_camels());
+        println!("{}", game.display_map());
         assert_eq!(game.camels[0].x, 1);
         assert_eq!(game.camels[0].y, 1);
-        let string = "\u{1b}[38;2;255;165;0mora\u{1b}[0m                                                \n".to_owned() +
-        "\u{1b}[33myel\u{1b}[0m                                                \n" +
-        "\u{1b}[32mgre\u{1b}[0m                                                \n" +
-        "   \u{1b}[34mblu\u{1b}[0m                                             \n" +
-        "   \u{1b}[1mwhi\u{1b}[0m                                             \n" +
-        "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
-        "                                                   \n";
-        assert_eq!(game.display_camels(), string);
+        let string = "\u{1b}[38;2;255;165;0mOra\u{1b}[0m                                                \n".to_owned() +
+        "\u{1b}[33mYel\u{1b}[0m                                                \n" +
+        "\u{1b}[32mGre\u{1b}[0m                                                \n" +
+        "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
+        "   \u{1b}[37mWhi\u{1b}[0m                                             \n" +
+        " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
+        "                                                \n";
+        assert_eq!(game.display_map(), string);
         game.move_camel(Color::Green, 3).unwrap();
-        println!("{}", game.display_camels());
-        let string = "\u{1b}[38;2;255;165;0mora\u{1b}[0m                                                \n".to_owned() +
-        "\u{1b}[33myel\u{1b}[0m                                                \n" +
+        println!("{}", game.display_map());
+        let string = "\u{1b}[38;2;255;165;0mOra\u{1b}[0m                                                \n".to_owned() +
+        "\u{1b}[33mYel\u{1b}[0m                                                \n" +
         "                                                   \n" +
-        "   \u{1b}[34mblu\u{1b}[0m                                             \n" +
-        "   \u{1b}[1mwhi\u{1b}[0m   \u{1b}[32mgre\u{1b}[0m                                       \n" +
-        "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
-        "                                                   \n";
-        assert_eq!(game.display_camels(), string);
+        "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
+        "   \u{1b}[37mWhi\u{1b}[0m   \u{1b}[32mGre\u{1b}[0m                                       \n" +
+        " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
+        "                                                \n";
+        assert_eq!(game.display_map(), string);
         game.move_camel(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 2).unwrap();
-        println!("{}", game.display_camels());
-        let string = "\u{1b}[33myel\u{1b}[0m                                                \n".to_owned() +
+        println!("{}", game.display_map());
+        let string = "\u{1b}[33mYel\u{1b}[0m                                                \n".to_owned() +
         "                                                   \n" +
         "                                                   \n" +
-        "   \u{1b}[34mblu\u{1b}[0m                                             \n" +
-        "   \u{1b}[1mwhi\u{1b}[0m\u{1b}[38;2;255;165;0mora\u{1b}[0m\u{1b}[32mgre\u{1b}[0m                                       \n" +
-        "_0__1__2__3__4__5__6__7__8__9__10_11_12_13_14_15_16__winner's_on_top__\n" +
-        "                                                   \n";
-        assert_eq!(game.display_camels(), string);
+        "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
+        "   \u{1b}[37mWhi\u{1b}[0m\u{1b}[38;2;255;165;0mOra\u{1b}[0m\u{1b}[32mGre\u{1b}[0m                                       \n" +
+        " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
+        "                                                \n";
+        assert_eq!(game.display_map(), string);
     }
 
     #[test]

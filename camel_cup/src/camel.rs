@@ -206,15 +206,15 @@ mod tests {
         game.move_camel(Color::Blue, 1).unwrap();
         //2
         game.camel_test_helper(2, Color::Blue, 1, 0, true);
-        assert_eq!(game.players[0].money, 6);
+        assert_eq!(game.players[0].money, 5);
         assert_eq!(game.players[2].money, 4);
         assert_eq!(game.players[1].money, 4);
         for camel in game.camels.iter_mut() {
             camel.moved = false;
         }
-        game.move_camel(Color::White, 1).unwrap();
-        game.camel_test_helper(1, Color::White, 3, 0, true);
-        game.camel_test_helper(0, Color::Green, 3, 1, false);
+        game.move_camel(Color::Green, 1).unwrap();
+        game.camel_test_helper(0, Color::White, 3, 1, false);
+        game.camel_test_helper(1, Color::Green, 3, 0, true);
         game.camel_test_helper(2, Color::Blue, 1, 0, false);
     }
 }

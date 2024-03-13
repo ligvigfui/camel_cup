@@ -1,20 +1,20 @@
 use crate::*;
 
 #[derive(Debug)]
-pub struct overallTipcard {
+pub struct OverallTipcard {
     pub(crate) color: Color,
     pub(crate) owner: usize,
 }
 
-impl overallTipcard {
+impl OverallTipcard {
     pub fn new(color: Color, owner: usize) -> Self {
-        overallTipcard {
+        OverallTipcard {
             color,
             owner
         }
     }
 
-    pub fn new_vec(colors: &Vec<Color>, player_number: usize) -> Vec<overallTipcard> {
+    pub fn new_vec(colors: &Vec<Color>, player_number: usize) -> Vec<OverallTipcard> {
         let mut endgame_tipcards = Vec::new();
         for color in colors {
             endgame_tipcards.push(Self::new(color.clone(), player_number));
@@ -75,7 +75,7 @@ mod tests {
         assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
         game.current_player = 1;
         assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
-        game.current_player = 3;
+        game.current_player = 2;
         assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
     }
 }
