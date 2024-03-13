@@ -4,10 +4,10 @@ use crate::*;
 
 #[derive(Debug, Clone)]
 pub struct Camel {
-    pub(crate) color: Color,
-    pub(crate) x: u8,
-    pub(crate) y: u8,
-    pub(crate) moved: bool,
+    pub color: Color,
+    pub x: u8,
+    pub y: u8,
+    pub moved: bool,
 }
 
 impl Camel {
@@ -38,12 +38,12 @@ impl Camel {
 }
 
 impl CamelCup {
-    pub fn move_camel(&mut self, camel_color: Color, amount: i8) -> Result<(), &'static str> {
+    pub fn move_camel(&mut self, camel_color: Color, amount: i8) -> Result<(), String> {
         if !self.dice_numbers.contains(&amount) {
-            return Err("amount not in possible dice rolls");
+            return Err("amount not in possible dice rolls".to_string());
         }
         if !self.camels.iter().any(|camel| camel.color == camel_color) {
-            return Err("No camel with this color");
+            return Err("No camel with this color".to_string());
         }
         let (mut x, mut y) = (0, 0);
         let mut camels_above = Vec::new();
@@ -52,7 +52,7 @@ impl CamelCup {
             if camel.color == camel_color {
                 //println!("{} {} {} {}", camel.x, camel.y, camel.moved, camel.color);
                 if camel.moved {
-                    return Err("camel already moved this turn");
+                    return Err("camel already moved this turn".to_string());
                 }
                 if camel.x == 0 {
                     camels_above.push(camel_number);
@@ -117,7 +117,7 @@ impl CamelCup {
         Ok(())
     }
 
-    pub fn rand_move_camel(&mut self) -> Result<(), &'static str>{
+    pub fn rand_move_camel(&mut self) -> Result<(), String>{
         let random = rand::thread_rng().gen_range(0..self.not_moved_camels().len());
         let color = self.not_moved_camels().remove(random);
         let amount = rand::thread_rng().gen_range(1..4);
@@ -185,7 +185,7 @@ mod tests {
         let mut game = CamelCup::a_3_player_new_game();
         //current player: 0
         assert!(game.move_camel(Color::White, 0).is_err());
-        assert_eq!(game.move_camel(Color::BrightBlack, 1), Err("No camel with this color"));
+        assert_eq!(game.move_camel(Color::BrightBlack, 1), Err("No camel with this color".to_string()));
         game.place_card(2, true).unwrap();
         //1
         game.place_card(4, false).unwrap();
@@ -196,7 +196,7 @@ mod tests {
         assert_eq!(game.players[0].money, 4);
         assert_eq!(game.players[1].money, 3);
         assert_eq!(game.players[2].money, 4);
-        assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn"));
+        assert_eq!(game.move_camel(Color::White, 1), Err("camel already moved this turn".to_string()));
         game.move_camel(Color::Green, 3).unwrap();
         //1
         game.camel_test_helper(0, Color::Green, 3, 1, true);

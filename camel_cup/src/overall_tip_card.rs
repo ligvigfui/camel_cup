@@ -41,7 +41,7 @@ impl CamelCup {
         }
         Err("You already bet on this color")
     }
-    pub fn end_game_bet(&mut self, winer: bool, color: &Color) -> Result<(), &'static str> {
+    pub fn end_game_bet(&mut self, winer: bool, color: &Color) -> Result<(), String> {
         self.end_game_bet_player(self.current_player, winer, color)?;
         self.next_player();
         Ok(())
@@ -70,11 +70,11 @@ mod tests {
         let mut game = CamelCup::a_3_player_new_game();
         assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
         game.current_player = 0;
-        assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(true, &Color::White), Err("You already bet on this color".to_string()));
         game.current_player = 1;
         assert_eq!(game.end_game_bet(true, &Color::White), Ok(()));
         game.current_player = 1;
-        assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color"));
+        assert_eq!(game.end_game_bet(false, &Color::White), Err("You already bet on this color".to_string()));
         game.current_player = 2;
         assert_eq!(game.end_game_bet(false, &Color::White), Ok(()));
     }

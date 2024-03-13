@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use crate::{get_weight, neuron::Neuron};
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NeuronNetwork {
     neurons: Vec<Vec<Neuron>>,

@@ -2,8 +2,8 @@ use crate::{CamelCup, Player};
 
 #[derive(Debug)]
 pub struct PlaceCard {
-    pub(crate) x: u8,
-    pub(crate) faceup: bool,
+    pub x: u8,
+    pub faceup: bool,
 }
 impl PlaceCard {
     pub fn new() -> Self {

@@ -2,8 +2,8 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct TipCard {
-    pub(crate) color: Color,
-    pub(crate) values: HashMap<Place, i8>,
+    pub color: Color,
+    pub values: HashMap<Place, i8>,
 }
 
 impl TipCard {
@@ -93,7 +93,7 @@ impl CamelCup {
             }
         }
     }
-    pub fn move_tip_card(&mut self, tip_card_color: &Color) -> Result<(), &'static str> {
+    pub fn move_tip_card(&mut self, tip_card_color: &Color) -> Result<(), String> {
         self.move_tip_card_player(self.current_player, tip_card_color)?;
         self.next_player();
         Ok(())

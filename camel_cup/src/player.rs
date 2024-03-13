@@ -3,10 +3,10 @@ use crate::*;
 #[derive(Debug)]
 pub struct Player {
     pub(crate) name: String,
-    pub(crate) money: u16,
-    pub(crate) placeable_card: PlaceCard,
-    pub(crate) tip_cards: Vec<TipCard>,
-    pub(crate) overall_tip_cards: Vec<OverallTipcard>,
+    pub money: u16,
+    pub placeable_card: PlaceCard,
+    pub tip_cards: Vec<TipCard>,
+    pub overall_tip_cards: Vec<OverallTipcard>,
 }
 impl Player {
     pub fn new(options: &mut Options) -> Player {

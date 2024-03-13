@@ -442,7 +442,7 @@ mod tests {
         game.move_tip_card(&Color::White).unwrap();
         game.move_tip_card(&Color::White).unwrap();
         game.move_tip_card(&Color::White).unwrap();
-        assert_eq!(game.move_tip_card(&Color::White), Err("No more cards of this color left"));
+        assert_eq!(game.move_tip_card(&Color::White), Err("No more cards of this color left".to_string()));
         game.move_tip_card(&Color::Green).unwrap();
         game.move_tip_card(&Color::Blue).unwrap();
         game.move_camel(Color::White, 3).unwrap();

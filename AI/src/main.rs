@@ -4,22 +4,11 @@ use AI::neuron_network::NeuronNetwork;
 use ai_camel_cup::save_and_exit;
 use rand::Rng;
 
-
-
-
-
-
-
-
 pub mod ai_camel_cup {
     use std::{sync::{Arc, Mutex}, fs::File, io::Write};
 
-    use AI::neuron_network::NeuronNetwork;
-    use camel_cup::*;
+    use AI::{camel_cup_extensions::Shit, neuron_network::NeuronNetwork, CamelCup};
     use rand::Rng;
-
-    
-    
 
     pub fn game(ai_players: &Vec<NeuronNetwork>) -> Vec<f64> {
         let mut game = CamelCup::a_n_player_game(ai_players.len());
@@ -28,7 +17,7 @@ pub mod ai_camel_cup {
         while !game.end_game_check() {
             while !game.end_turn_check() {
                 let input = game.game_state_to_input();
-                let output = ai_players[game.current_player()].get_output(input);
+                let output = ai_players[game.current_player].get_output(input);
                 output_to_action(output, &mut game);
                 game.next_player();
                 player_turns += 1;
@@ -86,53 +75,11 @@ pub mod ai_camel_cup {
             match 
                 match ordered_output[i].0 {
                     0 => game.rand_move_camel(),
-                    1 => game.place_card(1, true),
-                    2 => game.place_card(2, true),
-                    3 => game.place_card(3, true),
-                    4 => game.place_card(4, true),
-                    5 => game.place_card(5, true),
-                    6 => game.place_card(6, true),   
-                    7 => game.place_card(7, true),
-                    8 => game.place_card(8, true),
-                    9 => game.place_card(9, true),
-                    10 => game.place_card(10, true),
-                    11 => game.place_card(11, true),
-                    12 => game.place_card(12, true),
-                    13 => game.place_card(13, true),
-                    14 => game.place_card(14, true),
-                    15 => game.place_card(15, true),
-                    16 => game.place_card(16, true),
-                    17 => game.place_card(1, false),
-                    18 => game.place_card(2, false),
-                    19 => game.place_card(3, false),
-                    20 => game.place_card(4, false),
-                    21 => game.place_card(5, false),
-                    22 => game.place_card(6, false),
-                    23 => game.place_card(7, false),
-                    24 => game.place_card(8, false),
-                    25 => game.place_card(9, false),
-                    26 => game.place_card(10, false),
-                    27 => game.place_card(11, false),
-                    28 => game.place_card(12, false),
-                    29 => game.place_card(13, false),
-                    30 => game.place_card(14, false),
-                    31 => game.place_card(15, false),
-                    32 => game.place_card(16, false),
-                    33 => game.move_tip_card(&Color::White),
-                    34 => game.move_tip_card(&Color::Yellow),
-                    35 => game.move_tip_card("Orange"),
-                    36 => game.move_tip_card("Blue"),
-                    37 => game.move_tip_card("Green"),
-                    38 => game.end_game_bet(true, &Color::White),
-                    39 => game.end_game_bet(true, &Color::Yellow),
-                    40 => game.end_game_bet(true, "Orange"),
-                    41 => game.end_game_bet(true, "Blue"),
-                    42 => game.end_game_bet(true, "Green"),
-                    43 => game.end_game_bet(false, &Color::White),
-                    44 => game.end_game_bet(false, &Color::Yellow),
-                    45 => game.end_game_bet(false, "Orange"),
-                    46 => game.end_game_bet(false, "Blue"),
-                    47 => game.end_game_bet(false, "Green"),
+                    1..=15 => game.place_card(i as u8, true),
+                    16..=30 => game.place_card(i as u8, false),
+                    31..=35 => game.move_tip_card(&game.camels[i-30].color.clone()),
+                    36..=40 => game.end_game_bet(true, &game.camels[i-35].color.clone()),
+                    41..=45 => game.end_game_bet(false, &game.camels[i-40].color.clone()),
                     _ => panic!("You messed up big time"),
                 }
             {
@@ -198,8 +145,6 @@ fn main() {
     }
 
 
-    
-
     let paths = fs::read_dir("./generations/").unwrap();
     let mut gen = 0;
     for path in paths {
@@ -229,7 +174,7 @@ fn main() {
             let network = Arc::clone(&neural_networks);
             let handle = thread::spawn(move || {
                 loop {
-                    let nn = NeuronNetwork::new(41, 48);
+                    let nn = NeuronNetwork::new(41, 46);
                     let mut networks = network.lock().unwrap();
                     if networks.as_mut().unwrap().len()  % (batch_size/10)== 0 {
                         print!("=");
