@@ -191,7 +191,7 @@ fn main() {
         }
     }
 
-    let mut to_file = String::new();
+    let mut to_file = String::from("generation, max, avarege\n");
 
     while go_on {
         
@@ -209,11 +209,6 @@ fn main() {
             _ => panic!("please enter c/se in command.txt to continue"),
         }
         
-
-
-        
-    
-    
         //84000 networks DONE
         //create or read in neural networks DONE
         //read human input DONE
@@ -320,15 +315,6 @@ fn main() {
         }
         //println!("CHECK 2 nnnts {} nnnss {} nn {}", neural_networks_new_to_score.lock().unwrap().as_ref().unwrap().len(), neural_networks_new_score_sum.lock().unwrap().len(), neural_networks.lock().unwrap().as_ref().unwrap().len());
 
-
-
-
-
-
-
-
-
-
         
         // move to next gen
         println!("\t-skiping first {} networks", batch_size/player_number/2);
@@ -374,15 +360,14 @@ fn main() {
         }
 
         
-        //save gen max and avarege to file data.txt witouth overwriting 
-        let mut file = File::create("data.txt").unwrap();
-        to_file.push_str(format!("Gen {} max: {} avarege score: {}\n", gen, max, avarege).as_str());
+        //save gen max and avarege to file data.csv witouth overwriting 
+        let mut file = File::create("data.csv").unwrap();
+        to_file.push_str(format!("{},{},{}\n", gen, max, avarege).as_str());
         file.write_all(to_file.as_bytes()).unwrap();
         if debug {
             let mut st = String::new();
             io::stdin().read_line(&mut st).unwrap();
         }
-
 
         gen += 1;
     }
