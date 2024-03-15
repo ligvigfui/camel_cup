@@ -22,7 +22,7 @@ impl Shit for CamelCup {
                 }
             }
         }
-        //camels position & moved
+        //20 - camels position & moved
         for camel in &self.camels {
             inputs.push(camel.x as f64 / 16.0);
             inputs.push(camel.y as f64 / 5.0);
@@ -32,7 +32,7 @@ impl Shit for CamelCup {
                 None => 0.0
             });
         }
-        //players with tipcards in camel order, place cards place and faceup and money
+        //64 players with tipcards in camel order, place cards place and faceup and money
         fn add_player_informations(cc: &CamelCup, i: usize, inputs: &mut Vec<f64>) {
             inputs.push(cc.players[i].money as f64 / 50.0);
             for camel_colors in 0..5 {

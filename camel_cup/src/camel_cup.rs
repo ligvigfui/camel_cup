@@ -87,6 +87,7 @@ impl CamelCup {
                 };
             } else {
                 if human {println!("{} lost 1", self.players[endgametipcard.owner].name);}
+                if self.players[endgametipcard.owner].money == 0 { continue;}
                 self.players[endgametipcard.owner].money -= 1;
             }
         }
@@ -99,6 +100,7 @@ impl CamelCup {
                 };
             } else {
                 if human {println!("{} lost 1", self.players[endgametipcard.owner].name);}
+                if self.players[endgametipcard.owner].money == 0 { continue;}
                 self.players[endgametipcard.owner].money -= 1;
             }
         }

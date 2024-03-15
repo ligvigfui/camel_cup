@@ -1,4 +1,4 @@
-use std::{thread, io::{Read, Write, self}, env, fs::{File, self}, sync::{Arc, Mutex}};
+use std::{env, fs::{self, File}, io::{self, Read, Write}, sync::{Arc, Mutex}, thread};
 
 use AI::neuron_network::NeuronNetwork;
 use ai_camel_cup::save_and_exit;
@@ -75,11 +75,11 @@ pub mod ai_camel_cup {
             match 
                 match ordered_output[i].0 {
                     0 => game.rand_move_camel(),
-                    1..=15 => game.place_card(i as u8, true),
-                    16..=30 => game.place_card(i as u8, false),
-                    31..=35 => game.move_tip_card(&game.camels[i-30].color.clone()),
-                    36..=40 => game.end_game_bet(true, &game.camels[i-35].color.clone()),
-                    41..=45 => game.end_game_bet(false, &game.camels[i-40].color.clone()),
+                    1..=15 => game.place_card(ordered_output[i].0 as u8 + 1, true),
+                    16..=30 => game.place_card(ordered_output[i].0 as u8 - 14, false),
+                    31..=35 => game.move_tip_card(&game.camels[ordered_output[i].0-31].color.clone()),
+                    36..=40 => game.end_game_bet(true, &game.camels[ordered_output[i].0-36].color.clone()),
+                    41..=45 => game.end_game_bet(false, &game.camels[ordered_output[i].0-41].color.clone()),
                     _ => panic!("You messed up big time"),
                 }
             {
@@ -137,15 +137,16 @@ fn main() {
     let debug = false;
     //get current dir
     let env = env::current_dir().unwrap();
-    let mut path = env.to_str().unwrap().to_string();
-    //cd till the current dir is AI
-    while path.split("\\").last().unwrap() != "AI" {
-        path = path.split("\\").take(path.split("\\").count()-1).collect::<Vec<&str>>().join("\\");
-        env::set_current_dir(path.clone()).unwrap();
+    if !env.ends_with("AI") {
+        while let Some(component) = env.parent() {
+            if component.ends_with("AI") {
+                env::set_current_dir(component).unwrap();
+                break;
+            }
+        }
     }
 
-
-    let paths = fs::read_dir("./generations/").unwrap();
+    let paths = fs::read_dir(env::current_dir().unwrap().as_path().join("generations")).unwrap();
     let mut gen = 0;
     for path in paths {
         let a = match path.unwrap().path().display().to_string().split("/").last().unwrap().split(".").next().unwrap().parse::<usize>() {
@@ -156,8 +157,6 @@ fn main() {
             gen = a;
         }
     }
-
-    
 
     let go_on = true;
     let neural_networks = Arc::new(Mutex::new(Some(Vec::<NeuronNetwork>::new())));
@@ -174,7 +173,7 @@ fn main() {
             let network = Arc::clone(&neural_networks);
             let handle = thread::spawn(move || {
                 loop {
-                    let nn = NeuronNetwork::new(41, 46);
+                    let nn = NeuronNetwork::new(86, 46);
                     let mut networks = network.lock().unwrap();
                     if networks.as_mut().unwrap().len()  % (batch_size/10)== 0 {
                         print!("=");
@@ -196,16 +195,10 @@ fn main() {
 
     while go_on {
         
-
-
-        
-        
         //read the command.txt file
         let mut file = File::open("command.txt").unwrap();
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
-    
-        
         
         //check if the user wants to continue
         match contents.trim() {
