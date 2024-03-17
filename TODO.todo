@@ -1,7 +1,6 @@
 3 more outputs for the 3 general action gruops
     first pick an action gruop then pick a concrete action
 pick random networks with O(log(n)) time
-rethink the outputs with relative distances for camels, one positional parameter and one parameter for the best camel to the finish line
 350 - do it in paralel
 save NNs more sofisticatedly not all together
 load in NNs from file
