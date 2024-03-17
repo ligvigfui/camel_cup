@@ -56,7 +56,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     break;
                 },
                 Err(e) => {
-                    clear_screen(); println!("Error: {}", e);
+                    clear_screen();
+                    println!("Error: {}", e);
                     io::stdin().read_line(&mut String::new()).expect("Failed to read line");
                     continue;
                 },
@@ -70,7 +71,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             game.end_game_evaluate(true);
             running = false;
         }
-        game.next_player();
     }
     game.end_game_players_display();
     Ok(())

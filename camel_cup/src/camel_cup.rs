@@ -116,6 +116,9 @@ impl CamelCup {
             let mut cards = player.evaluate_tip_cards(&self.camels);
             self.tip_cards.append(&mut cards);
         }
+        for camel in self.camels.iter_mut() {
+            camel.moved = false;
+        }
     }
 
     //_______________________________________________________________________________________
@@ -197,7 +200,7 @@ impl CamelCup {
         for i in 0..self.map_len+1 {
             display.push_str(&format!("{: ^3}", i));
         }
-        display.push_str("  winner's on top\n");
+        display.push_str("  winner's on top\n   ");
         let mut player_found = false;
         for i in 1..self.map_len+1 {
             for (j, player) in self.players.iter().enumerate() {
