@@ -19,6 +19,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_json",
+ "terminal_colors",
 ]
 
 [[package]]
@@ -151,6 +152,11 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "terminal_colors"
+version = "0.1.0"
+source = "git+https://github.com/ligvigfui/terminal-colors#eb9dc56175cdbcc9123fd31b9dcb5187ea798ca6"
 
 [[package]]
 name = "unicode-ident"

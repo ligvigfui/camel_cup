@@ -1,6 +1,5 @@
 pub mod camel_cup;
 pub mod camel;
-pub mod colored_strings;
 pub mod overall_tip_card;
 pub mod options;
 pub mod place_card;
@@ -11,7 +10,6 @@ pub mod tip_card;
 pub use crate::{
     camel_cup::*,
     camel::*,
-    colored_strings::*,
     overall_tip_card::*,
     options::*,
     place_card::*,
@@ -21,6 +19,7 @@ pub use crate::{
 };
 
 pub use std::collections::HashMap;
+pub use terminal_colors::*;
 use std::io;
 
 pub fn clear_screen() {

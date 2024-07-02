@@ -140,6 +140,7 @@ impl CamelCup {
         usize::MAX
     }
 
+    #[allow(dead_code)]
     pub(crate) fn set_camel_position(&mut self, camel_color: Color, x: u8, y: u8) {
         //! test fn only
         /*self.camels.iter().for_each(|(camel)| {
@@ -158,6 +159,7 @@ impl CamelCup {
         panic!("No camel with this color");
     }
 
+    #[allow(dead_code)]
     pub(crate) fn camel_test_helper(&self, camel_index: usize, color: Color, assert_x: u8, assert_y: u8, assert_moved: bool) {
         let camel = &self.camels[camel_index];
         assert_eq!(camel.color, color);

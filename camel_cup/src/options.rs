@@ -17,7 +17,13 @@ impl Options {
         Options {
             map_len: 16,
             player_names,
-            camel_colors: vec![Color::White, Color::Blue, Color::Green, Color::Yellow, Color::RGB(Some("Orange".to_string()), 255, 165, 0)],
+            camel_colors: vec![
+                Color::White,
+                Color::Blue,
+                Color::Green,
+                Color::Yellow,
+                Color::RGB(RGB::named("Orange", 255, 165, 0)),
+            ],
             dice_numbers: vec![1, 2, 3],
             leg_tips: vec![
                 HashMap::from([

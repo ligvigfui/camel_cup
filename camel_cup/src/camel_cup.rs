@@ -54,7 +54,6 @@ impl CamelCup {
         }
     }
 
-    //______________________________________________________________________________________________________________________
     pub fn end_turn_check(&self) -> bool {
         let mut end_of_turn = true;
         for camel in self.camels.iter() {
@@ -63,7 +62,6 @@ impl CamelCup {
         end_of_turn
     }
 
-    //______________________________________________________________________________________________________________________
     pub fn end_game_check(&self) -> bool {
         for camel in self.camels.iter() {
             if camel.x > self.map_len {
@@ -73,7 +71,6 @@ impl CamelCup {
         false
     }
 
-    //______________________________________________________________________________________________________________________
     pub fn end_game_evaluate(&mut self, human: bool) {
         if human {println!("{:?}", self);}
         let mut winer_reward = vec![2, 3, 5, 8];
@@ -110,7 +107,6 @@ impl CamelCup {
         }
     }
 
-    //_______________________________________________________________________________________
     pub fn evaluate_end_turn(&mut self) {
         for player in self.players.iter_mut() {
             let mut cards = player.evaluate_tip_cards(&self.camels);
@@ -121,10 +117,9 @@ impl CamelCup {
         }
     }
 
-    //_______________________________________________________________________________________
     pub fn display (&self) {
         //display current player
-        println!("Current player: {}", ColoredString::new(&self.players[self.current_player].name).bold(true));
+        println!("Current player: {}", ColoredString::from(&self.players[self.current_player].name).bold(true));
         //display camels
         //display map
         //display player cards
@@ -136,7 +131,7 @@ impl CamelCup {
             if player.tip_cards.len() > 0 {
                 print!("{}'s cards: ", player.name);
                 for card in player.tip_cards.iter() {
-                    print!("{} {},  ", Color!(card.color).foreground(&card.color), card.values.get(&Place::Top(1)).unwrap());
+                    print!("{} {},  ", color!(card.color).foreground(&card.color), card.values.get(&Place::Top(1)).unwrap());
                 }
                 println!();
             }
@@ -144,11 +139,10 @@ impl CamelCup {
         //display tip cards
         print!("{}", self.display_tip_cards());
         //display endgame info
-        println!("{} cards bet on the winer camel", Color!(self.winer_overalltipcards.len()).bold(true));
-        println!("{} cards bet on the losing camel", Color!(self.loser_overalltipcards.len()).bold(true));
+        println!("{} cards bet on the winer camel", color!(self.winer_overalltipcards.len()).bold(true));
+        println!("{} cards bet on the losing camel", color!(self.loser_overalltipcards.len()).bold(true));
     }
 
-    //_______________________________________________________________________________________
     fn display_tip_cards(&self) -> String {
         let mut display = String::new();
         let mut cards: HashMap<&Color, Vec<String>> = HashMap::new();
@@ -161,19 +155,18 @@ impl CamelCup {
         }
         for (&color, card_values) in cards.iter_mut() {
             card_values.sort_by(|a, b| b.cmp(a));
-            display.push_colored(Color!("{: >8}: {}\n", color.to_string(), card_values.join("\t")).foreground(color));
+            display.push_colored(color!("{: >8}: {}\n", color.to_string(), card_values.join("\t")).foreground(color));
         }
         display
     }
 
-    //_______________________________________________________________________________________
     fn display_map(&self) -> String {
         let mut display = String::new();
         for i in (0..=self.camels.len()-1).rev() {
             for (j, camel) in self.camels.iter().enumerate() {
                 if !camel.moved && i == j{
                     display.push_colored(
-                        Color!(&camel.color.to_string()[0..3])
+                        color!(&camel.color.to_string()[0..3])
                         .foreground(&camel.color)
                     );
                 } else if i == j {
@@ -185,7 +178,7 @@ impl CamelCup {
                 for camel in self.camels.iter() {
                     if camel.x == j && camel.y == i as u8 {
                         display.push_colored(
-                            Color!(&camel.color.to_string()[0..3])
+                            color!(&camel.color.to_string()[0..3])
                             .foreground(&camel.color)
                         );
                         found = true;
@@ -206,9 +199,9 @@ impl CamelCup {
             for (j, player) in self.players.iter().enumerate() {
                 if player.placeable_card.x == i && j == self.current_player {
                     if player.placeable_card.faceup {
-                        display.push_colored(Color!(" + ").bold(true))
+                        display.push_colored(color!(" + ").bold(true))
                     } else {
-                        display.push_colored(Color!(" - ").bold(true))
+                        display.push_colored(color!(" - ").bold(true))
                     }
                     player_found = true;
                 } else if player.placeable_card.x == i {
@@ -229,7 +222,6 @@ impl CamelCup {
         display
     }
 
-    //_______________________________________________________________________________________
     pub fn human_turn(&mut self) -> Result<(), String> {
         println!("What do you want to do from the following options? (type the number)");
         let options = vec!["place your card", "move camel", "bet on camel", "bet on endgame"];
@@ -257,7 +249,6 @@ impl CamelCup {
         not_moved_camels
     }
 
-    //_______________________________________________________________________________________
     fn human_place_card(&mut self) -> Result<(), String> {
         println!("Where do you want to place your card? (type the number)");
         let input = read_usize(self.map_len as usize)?;
@@ -273,7 +264,6 @@ impl CamelCup {
         }
     }
 
-    //_______________________________________________________________________________________
     fn human_bet_on_camel(&mut self) -> Result<(), String> {
         clear_screen();
         println!("{}", self.display_map());
@@ -295,7 +285,7 @@ impl CamelCup {
             println!(
                 "{}: {} \t{}",
                 i,
-                Color!(color).foreground(&color),
+                color!(color).foreground(&color),
                 value
             );
         }
@@ -305,7 +295,6 @@ impl CamelCup {
         Ok(())
     }
 
-    //_______________________________________________________________________________________
     fn human_bet_on_endgame(&mut self) -> Result<(), String> {
         println!("Do you want to bet on the winer camel or the loser camel? (type the number)");
         let options = vec!["winer", "loser"];
@@ -319,7 +308,7 @@ impl CamelCup {
         else {println!("Currently {} cards bet on the loser camel", self.loser_overalltipcards.len());}
         println!("Which camel do you want to bet on? (type the number)");
         for (i, overall_tip_card) in self.current_player().overall_tip_cards.iter().enumerate() {
-            println!("{}: {}", i, Color!(overall_tip_card.color).foreground(&overall_tip_card.color));
+            println!("{}: {}", i, color!(overall_tip_card.color).foreground(&overall_tip_card.color));
         }
         let input2 = read_usize(self.current_player().overall_tip_cards.len() - 1)?;
         let color = self.current_player().overall_tip_cards[input2].color.clone();
@@ -381,7 +370,7 @@ mod tests {
             game.camels[i].moved = true;
         }
         game.set_camel_position(Color::White, 1, 1);
-        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 2, 1);
+        game.set_camel_position(Color::RGB(RGB::named("Orange", 255, 165, 0)), 2, 1);
         game.set_camel_position(Color::Blue, 3, 1);
         game.set_camel_position(Color::Green, 4,1);
         game.set_camel_position(Color::Yellow, 5, 1);
@@ -390,7 +379,7 @@ mod tests {
         assert_eq!(game.camels[1].color, Color::Green);
         assert_eq!(game.camels[4].color, Color::White);
         game.set_camel_position(Color::White, 1, 1);
-        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 1, 2);
+        game.set_camel_position(Color::RGB(RGB::named("Orange", 255, 165, 0)), 1, 2);
         game.set_camel_position(Color::Blue, 1, 3);
         game.set_camel_position(Color::Green, 1,4);
         game.set_camel_position(Color::Yellow, 1, 5);
@@ -399,7 +388,7 @@ mod tests {
         assert_eq!(game.camels[1].color, Color::Green);
         assert_eq!(game.camels[4].color, Color::White);
         game.set_camel_position(Color::White, 1, 1);
-        game.set_camel_position(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 3, 1);
+        game.set_camel_position(Color::RGB(RGB::named("Orange", 255, 165, 0)), 3, 1);
         game.set_camel_position(Color::Blue, 6, 1);
         game.set_camel_position(Color::Green, 1,2);
         game.set_camel_position(Color::Yellow, 5, 1);
@@ -421,9 +410,9 @@ mod tests {
         assert_eq!(game.players[2].money, 3);
         assert_eq!(game.winer_overalltipcards.len(), 2);
         assert_eq!(game.loser_overalltipcards.len(), 1);
-        game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
-        game.end_game_bet(false, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
-        game.end_game_bet(true, &Color::RGB(Some("Orange".to_string()), 255, 165, 0)).unwrap();
+        game.end_game_bet(false, &Color::RGB(RGB::named("Orange", 255, 165, 0)),).unwrap();
+        game.end_game_bet(false, &Color::RGB(RGB::named("Orange", 255, 165, 0)),).unwrap();
+        game.end_game_bet(true, &Color::RGB(RGB::named("Orange", 255, 165, 0)),).unwrap();
         game.camels[0].x = 17;
         game.camels[1].x = 1;
         game.camels[2].x = 1;
@@ -473,7 +462,7 @@ mod tests {
         "\u{1b}[34mBlu\u{1b}[0m                                                \n" +
         "\u{1b}[37mWhi\u{1b}[0m                                                \n" +
         " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
-        "                                                \n";
+        "                                                   \n";
         assert_eq!(game.display_map(), string);
         game.move_camel(Color::White, 1).unwrap();
         println!("{:?}", game.camels);
@@ -485,7 +474,7 @@ mod tests {
         "\u{1b}[34mBlu\u{1b}[0m                                                \n" +
         "   \u{1b}[37mWhi\u{1b}[0m                                             \n" +
         " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
-        "                                                \n";
+        "                                                   \n";
         assert_eq!(game.display_map(), string);
         game.move_camel(Color::Blue, 1).unwrap();
         println!("{:?}", game.camels);
@@ -498,7 +487,7 @@ mod tests {
         "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
         "   \u{1b}[37mWhi\u{1b}[0m                                             \n" +
         " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
-        "                                                \n";
+        "                                                   \n";
         assert_eq!(game.display_map(), string);
         game.move_camel(Color::Green, 3).unwrap();
         println!("{}", game.display_map());
@@ -508,9 +497,9 @@ mod tests {
         "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
         "   \u{1b}[37mWhi\u{1b}[0m   \u{1b}[32mGre\u{1b}[0m                                       \n" +
         " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
-        "                                                \n";
+        "                                                   \n";
         assert_eq!(game.display_map(), string);
-        game.move_camel(Color::RGB(Some("Orange".to_string()), 255, 165, 0), 2).unwrap();
+        game.move_camel(Color::RGB(RGB::named("Orange", 255, 165, 0)), 2).unwrap();
         println!("{}", game.display_map());
         let string = "\u{1b}[33mYel\u{1b}[0m                                                \n".to_owned() +
         "                                                   \n" +
@@ -518,7 +507,7 @@ mod tests {
         "   \u{1b}[34mBlu\u{1b}[0m                                             \n" +
         "   \u{1b}[37mWhi\u{1b}[0m\u{1b}[38;2;255;165;0mOra\u{1b}[0m\u{1b}[32mGre\u{1b}[0m                                       \n" +
         " 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16   winner's on top\n" +
-        "                                                \n";
+        "                                                   \n";
         assert_eq!(game.display_map(), string);
     }
 
